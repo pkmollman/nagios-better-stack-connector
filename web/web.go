@@ -123,6 +123,13 @@ func StartServer() {
 	})
 
 	// serve
-	fmt.Println("Listening on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	goFuncPort := os.Getenv("FUNCTIONS_CUSTOMHANDLER_PORT")
+	if goFuncPort != "" {
+		fmt.Println("Running in Azure Functions")
+		fmt.Println("Listening on port " + goFuncPort)
+		log.Fatal(http.ListenAndServe(":"+goFuncPort, nil))
+	} else {
+		fmt.Println("Listening on port 8080")
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}
 }
