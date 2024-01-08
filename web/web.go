@@ -57,7 +57,7 @@ func StartServer() {
 	nagiosClient := nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
 
 	/// Handle Incoming Nagios Notifications
-	http.HandleFunc("/event", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
 		var event database.EventItem
 
 		err := json.NewDecoder(r.Body).Decode(&event)
@@ -96,7 +96,7 @@ func StartServer() {
 	})
 
 	/// Handle Incoming Better Stack Webhooks
-	http.HandleFunc("/better-stack-interaction", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/better-stack-event", func(w http.ResponseWriter, r *http.Request) {
 		var event betterstack.BetterStackIncidentWebhookPayload
 
 		err := json.NewDecoder(r.Body).Decode(&event)
