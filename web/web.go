@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -20,6 +21,10 @@ func getEnvVarOrPanic(key string) string {
 	}
 
 	return value
+}
+
+func logRequest(r *http.Request) {
+	slog.Info(fmt.Sprintf("%s - %s - %s", r.Method, r.URL, r.Proto))
 }
 
 func StartServer() {
@@ -58,6 +63,7 @@ func StartServer() {
 
 	/// Handle Incoming Nagios Notifications
 	http.HandleFunc("/api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
+		logRequest(r)
 		var event database.EventItem
 
 		err := json.NewDecoder(r.Body).Decode(&event)
@@ -97,6 +103,7 @@ func StartServer() {
 
 	/// Handle Incoming Better Stack Webhooks
 	http.HandleFunc("/api/better-stack-event", func(w http.ResponseWriter, r *http.Request) {
+		logRequest(r)
 		var event betterstack.BetterStackIncidentWebhookPayload
 
 		err := json.NewDecoder(r.Body).Decode(&event)
