@@ -89,6 +89,7 @@ func StartServer() {
 			betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
 			if err != nil {
 				slog.Error("Failed to create incident: " + incidentName)
+				slog.Error(err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
