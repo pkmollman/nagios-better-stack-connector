@@ -59,7 +59,7 @@ func StartServer() {
 	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
 
 	// create nagios client
-	nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
+	nagiosClient := nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
 
 	/// Handle Incoming Nagios Notifications
 	http.HandleFunc("/api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +113,7 @@ func StartServer() {
 		}
 
 		if event.Data.Attributes.Status == "acknowledged" || event.Data.Attributes.Status == "resolved" {
-			eventData := database.EventItem{}
+			var eventData database.EventItem
 
 			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
 
@@ -122,9 +122,21 @@ func StartServer() {
 					eventData = item
 				}
 			}
-			fmt.Println("would ack nagios:")
-			fmt.Println(eventData)
-			//nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+
+			if eventData.Id == "" {
+				slog.Error("Could not find event for betterstack incident id: " + event.Data.Id)
+				http.Error(w, "Could not find event", http.StatusBadRequest)
+				return
+			} else {
+				err = nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+				if err != nil {
+					slog.Error("Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				} else {
+					slog.Info("Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+				}
+			}
 		}
 
 		// return success
