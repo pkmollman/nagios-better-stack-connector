@@ -81,6 +81,9 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 
 	// check response
 	if res.StatusCode != 201 {
+		// print the response body
+		body, _ := io.ReadAll(res.Body)
+		fmt.Println(string(body))
 		return "", fmt.Errorf("response status code was %d", res.StatusCode)
 	}
 
