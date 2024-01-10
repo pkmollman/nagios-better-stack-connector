@@ -86,7 +86,6 @@ func StartServer() {
 
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
-			// create it
 			slog.Info("Creating incident: " + incidentName)
 			betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
 			if err != nil {
@@ -98,7 +97,6 @@ func StartServer() {
 
 			event.BetterStackIncidentId = betterStackIncidentId
 
-			// create it
 			err = database.CreateEventItem(client, databaseName, containerName, event.NagiosSiteName, event)
 			if err != nil {
 				slog.Error("Failed to create event item: " + incidentName)
@@ -124,9 +122,6 @@ func StartServer() {
 				}
 			}
 		case "RECOVERY":
-			// update it
-			// check if it is already recovered
-			// problem ID will be 0, so you will need to associate the incident id by event hostname and service name
 			slog.Info("Resolving incident logic goes here: " + incidentName)
 			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
 
