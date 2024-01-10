@@ -18,7 +18,7 @@ type EventItem struct {
 	NagiosProblemServiceName string `json:"nagiosProblemServiceName"`
 	NagiosProblemContent     string `json:"nagiosProblemContent"`
 	// ("PROBLEM", "RECOVERY", "ACKNOWLEDGEMENT", "FLAPPINGSTART", "FLAPPINGSTOP", "FLAPPINGDISABLED", "DOWNTIMESTART", "DOWNTIMEEND", "DOWNTIMECANCELLED")
-	NagiosProblemNotificationType string `json:"nagiosNotificationType"`
+	NagiosProblemNotificationType string `json:"nagiosProblemNotificationType"`
 	BetterStackIncidentId         string `json:"betterStackIncidentId"`
 }
 
