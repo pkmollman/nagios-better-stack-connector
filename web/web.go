@@ -24,7 +24,7 @@ func getEnvVarOrPanic(key string) string {
 }
 
 func logRequest(r *http.Request) {
-	slog.Info(fmt.Sprintf("%s - %s - %s", r.Method, r.URL, r.Proto))
+	slog.Info(fmt.Sprintf("%s %s %s", r.Method, r.URL, r.Proto))
 }
 
 func StartServer() {
@@ -122,7 +122,9 @@ func StartServer() {
 					eventData = item
 				}
 			}
-			nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+			fmt.Println("would ack nagios:")
+			fmt.Println(eventData)
+			//nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
 		}
 
 		// return success
