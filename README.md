@@ -32,7 +32,13 @@ Generate a Thruk API key for the connector service, and provide it in the enviro
 Make your notification commands pipe to the provided nagios-client.sh. It uses curl to hit this connector service.
 
 ```bash
-bash client.sh -u "https://your-connector.blah/api/nagios-event" -s "site name" -i 123 -c "cause" -n "service name" -h "host name"
+bash client.sh \
+    -u "https://your-connector.blah/api/nagios-event" \
+    -s "site name" \
+    -i 123 \
+    -c "cause" \
+    -n "service name" \
+    -h "host name"
 ```
 
 ### Better Stack
