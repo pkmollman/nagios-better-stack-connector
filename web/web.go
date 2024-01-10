@@ -59,7 +59,7 @@ func StartServer() {
 	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
 
 	// create nagios client
-	nagiosClient := nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
+	nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
 
 	/// Handle Incoming Nagios Notifications
 	http.HandleFunc("/api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
