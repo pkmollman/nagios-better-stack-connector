@@ -1,4 +1,4 @@
-while getopts "u:s:i:c:n:h:" flag; do
+while getopts "u:s:i:c:n:h:t:" flag; do
  case $flag in
    u) # Handle connector endpoint
    CONNECTOR_ENDPOINT=$OPTARG
@@ -18,6 +18,9 @@ while getopts "u:s:i:c:n:h:" flag; do
    h) # Handle the -h flag
    HOST_NAME=$OPTARG
    ;;
+   t) # Handle the -t flag
+   NOTIFICATION_TYPE=$OPTARG
+   ;;
    \?)
    # Handle invalid options
    ;;
@@ -32,5 +35,6 @@ curl -X POST "$CONNECTOR_ENDPOINT" -d "
 	\"nagiosProblemId\": $PROBLEM_ID,
 	\"nagiosProblemContent\":\"$PROBLEM_CONTENT\",
 	\"nagiosProblemServiceName\": \"$SERVICE_NAME\",
-	\"nagiosProblemHostname\": \"$HOST_NAME\"
+	\"nagiosProblemHostname\": \"$HOST_NAME\",
+  \"nagiosProblemNotificationType\": \"$NOTIFICATION_TYPE\"
 }"

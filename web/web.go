@@ -82,19 +82,37 @@ func StartServer() {
 			event.NagiosProblemType = "HOST"
 		}
 
-		betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		switch event.NagiosProblemNotificationType {
+		case "PROBLEM":
+			// create it
+			slog.Info("Creating incident: " + incidentName)
+			betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
+			if err != nil {
+				slog.Error("Failed to create incident: " + incidentName)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-		event.BetterStackIncidentId = betterStackIncidentId
+			event.BetterStackIncidentId = betterStackIncidentId
 
-		// create it
-		err = database.CreateEventItem(client, databaseName, containerName, event.NagiosSiteName, event)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			// create it
+			err = database.CreateEventItem(client, databaseName, containerName, event.NagiosSiteName, event)
+			if err != nil {
+				slog.Error("Failed to create event item: " + incidentName)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			slog.Info("Created incident: " + incidentName)
+		case "ACKNOWLEDGEMENT":
+			// update it
+			slog.Info("Acknowledging incident logic goes here: " + incidentName)
+		case "RECOVERY":
+			// update it
+			slog.Info("Resolving incident logic goes here: " + incidentName)
+		default:
+			// ignore it
+			slog.Info("Ignoring incoming notification: " + incidentName + " STATUS " + event.NagiosProblemNotificationType)
 		}
 
 		// return success

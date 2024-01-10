@@ -18,8 +18,8 @@ type EventItem struct {
 	NagiosProblemServiceName string `json:"nagiosProblemServiceName"`
 	NagiosProblemContent     string `json:"nagiosProblemContent"`
 	// ("PROBLEM", "RECOVERY", "ACKNOWLEDGEMENT", "FLAPPINGSTART", "FLAPPINGSTOP", "FLAPPINGDISABLED", "DOWNTIMESTART", "DOWNTIMEEND", "DOWNTIMECANCELLED")
-	NagiosNotificationType string `json:"nagiosNotificationType"`
-	BetterStackIncidentId  string `json:"betterStackIncidentId"`
+	NagiosProblemNotificationType string `json:"nagiosNotificationType"`
+	BetterStackIncidentId         string `json:"betterStackIncidentId"`
 }
 
 func CreateEventItem(client *azcosmos.Client, databaseName, containerName, partitionKey string, item EventItem) error {
