@@ -42,12 +42,11 @@ func CreateEventItem(client *azcosmos.Client, databaseName, containerName, parti
 		ConsistencyLevel: azcosmos.ConsistencyLevelSession.ToPtr(),
 	}
 	ctx := context.TODO()
-	itemResponse, err := containerClient.CreateItem(ctx, pk, b, &itemOptions)
+	_, err = containerClient.CreateItem(ctx, pk, b, &itemOptions)
 
 	if err != nil {
 		return err
 	}
-	log.Printf("Status %d. Item %v created. ActivityId %s. Consuming %v Request Units.\n", itemResponse.RawResponse.StatusCode, pk, itemResponse.ActivityID, itemResponse.RequestCharge)
 
 	return nil
 }

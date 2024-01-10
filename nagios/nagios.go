@@ -80,18 +80,18 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 		return err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	_, err = http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 
-	// print response body
-	b, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
+	// // print response body
+	// b, err := io.ReadAll(res.Body)
+	// if err != nil {
+	// 	return err
+	// }
 
-	fmt.Println(string(b))
+	// fmt.Println(string(b))
 
 	return nil
 }
