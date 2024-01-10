@@ -52,3 +52,11 @@ NAGIOS_THRUK_API_KEY=''
 NAGIOS_THRUK_BASE_URL=''
 NAGIOS_THRUK_SITE_NAME=''
 ```
+
+## TODO
+
+- [ ] pass nagios ack comment to better stack
+- [ ] add support for host notifications
+- [ ] handle multiple notifications for same problem
+- [ ] handle multiple fast crit to recovers from nagios....
+- [ ] make unit file and stuff
