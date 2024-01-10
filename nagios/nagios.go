@@ -95,3 +95,32 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 
 	return nil
 }
+
+type ServiceState struct {
+	Acknowledged int `json:"acknowledged"`
+	State        int `json:"state"`
+}
+
+func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, error) {
+	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/services/%s/%s", n.siteName, host, service), nil)
+	if err != nil {
+		return ServiceState{}, err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return ServiceState{}, err
+	}
+
+	var serviceStateResponse []ServiceState
+	err = json.NewDecoder(res.Body).Decode(&serviceStateResponse)
+	if err != nil {
+		return ServiceState{}, err
+	}
+
+	if len(serviceStateResponse) != 1 {
+		return ServiceState{}, fmt.Errorf("failed to get service state")
+	}
+
+	return serviceStateResponse[0], nil
+}

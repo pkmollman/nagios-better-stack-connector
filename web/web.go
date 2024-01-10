@@ -107,9 +107,11 @@ func StartServer() {
 			slog.Info("Created incident: " + incidentName)
 		case "ACKNOWLEDGEMENT":
 			// update it
+			// check if it is already acknowledged or recovered
 			slog.Info("Acknowledging incident logic goes here: " + incidentName)
 		case "RECOVERY":
 			// update it
+			// check if it is already recovered
 			slog.Info("Resolving incident logic goes here: " + incidentName)
 		default:
 			// ignore it
@@ -147,13 +149,25 @@ func StartServer() {
 				http.Error(w, "Could not find event", http.StatusBadRequest)
 				return
 			} else {
-				err = nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+				// check if it is already acknowledged or recovered
+				serviceState, err := nagiosClient.GetServiceState(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName)
 				if err != nil {
-					slog.Error("Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+					slog.Error("Failed to get service ack state: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
+				}
+
+				if serviceState.Acknowledged == 0 && serviceState.State != 0 {
+					err = nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+					if err != nil {
+						slog.Error("Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					} else {
+						slog.Info("Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+					}
 				} else {
-					slog.Info("Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+					slog.Info("Service already acknowledged, or recovered: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 				}
 			}
 		}
