@@ -101,3 +101,73 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 	// return success
 	return incidentResponse.Data.Id, nil
 }
+
+func (b *BetterStackClient) AcknowledgeIncident(incidentId string) error {
+	// create it
+	var betterStackAck struct {
+		AckedBy string `json:"acknowledged_by"`
+	}
+
+	betterStackAck.AckedBy = "mollman@uoregon.edu"
+
+	// marshal struct to json to reader
+	jsonBody, err := json.Marshal(betterStackAck)
+	if err != nil {
+		return err
+	}
+	jsonBodyReader := bytes.NewReader(jsonBody)
+
+	req, err := b.NewRequest("POST", "/api/v2/incidents/"+incidentId+"/acknowledge", jsonBodyReader)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// check response
+	if res.StatusCode != 409 && res.StatusCode != 200 {
+		// print the response body
+		body, _ := io.ReadAll(res.Body)
+		fmt.Println(string(body))
+		return fmt.Errorf("response status code was %d", res.StatusCode)
+	}
+
+	// return success
+	return nil
+}
+
+func (b *BetterStackClient) ResolveIncident(incidentId string) error {
+	// create it
+	var betterStackAck struct {
+		ResolvedBy string `json:"resolved_by"`
+	}
+
+	betterStackAck.ResolvedBy = "mollman@uoregon.edu"
+
+	// marshal struct to json to reader
+	jsonBody, err := json.Marshal(betterStackAck)
+	if err != nil {
+		return err
+	}
+	jsonBodyReader := bytes.NewReader(jsonBody)
+
+	req, err := b.NewRequest("POST", "/api/v2/incidents/"+incidentId+"/resolve", jsonBodyReader)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// check response
+	if res.StatusCode != 409 && res.StatusCode != 200 {
+		// print the response body
+		body, _ := io.ReadAll(res.Body)
+		fmt.Println(string(body))
+		return fmt.Errorf("response status code was %d", res.StatusCode)
+	}
+
+	// return success
+	return nil
+}

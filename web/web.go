@@ -108,13 +108,41 @@ func StartServer() {
 
 			slog.Info("Created incident: " + incidentName)
 		case "ACKNOWLEDGEMENT":
-			// update it
-			// check if it is already acknowledged or recovered
-			slog.Info("Acknowledging incident logic goes here: " + incidentName)
+			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
+
+			for _, item := range items {
+				if item.NagiosProblemId == event.NagiosProblemId {
+					ackerr := betterStackClient.AcknowledgeIncident(item.BetterStackIncidentId)
+					if ackerr != nil {
+						slog.Error("Failed to acknowledge incident: " + incidentName)
+						slog.Error(ackerr.Error())
+						http.Error(w, ackerr.Error(), http.StatusInternalServerError)
+						return
+					} else {
+						slog.Info("Acknowledged incident: " + incidentName + " " + item.BetterStackIncidentId)
+					}
+				}
+			}
 		case "RECOVERY":
 			// update it
 			// check if it is already recovered
+			// problem ID will be 0, so you will need to associate the incident id by event hostname and service name
 			slog.Info("Resolving incident logic goes here: " + incidentName)
+			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
+
+			for _, item := range items {
+				if item.NagiosProblemHostname == event.NagiosProblemHostname && item.NagiosProblemServiceName == event.NagiosProblemServiceName {
+					ackerr := betterStackClient.ResolveIncident(item.BetterStackIncidentId)
+					if ackerr != nil {
+						slog.Error("Failed to resolve incident: " + incidentName)
+						slog.Error(ackerr.Error())
+						http.Error(w, ackerr.Error(), http.StatusInternalServerError)
+						return
+					} else {
+						slog.Info("Resolved incident: " + incidentName + " " + item.BetterStackIncidentId)
+					}
+				}
+			}
 		default:
 			// ignore it
 			slog.Info("Ignoring incoming notification: " + incidentName + " STATUS " + event.NagiosProblemNotificationType)
