@@ -82,6 +82,8 @@ func StartServer() {
 			event.NagiosProblemType = "HOST"
 		}
 
+		slog.Info("Incoming notification: " + incidentName + " problemId " + event.Id)
+
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
 			// create it
