@@ -60,3 +60,8 @@ NAGIOS_THRUK_SITE_NAME=''
 - [ ] handle multiple notifications for same problem
 - [ ] handle multiple fast crit to recovers from nagios....
 - [ ] make unit file and stuff
+- [ ] ack didn't come through from nagios
+- [ ] params the policy id (so you can easily have multiple escalation paths from nagios), handle the rest
+- [ ] make a better/more-reliable client for nagios
+- [ ] make sure all actions are site specific
+- [ ] make monitoring endpoints to watch the connector service
