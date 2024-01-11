@@ -127,7 +127,7 @@ func StartServer() {
 			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
 
 			for _, item := range items {
-				if item.NagiosProblemHostname == event.NagiosProblemHostname && item.NagiosProblemServiceName == event.NagiosProblemServiceName {
+				if item.NagiosProblemType == event.NagiosProblemType && item.NagiosProblemHostname == event.NagiosProblemHostname && item.NagiosProblemServiceName == event.NagiosProblemServiceName {
 					ackerr := betterStackClient.ResolveIncident(item.BetterStackIncidentId)
 					if ackerr != nil {
 						slog.Error("Failed to resolve incident: " + incidentName)

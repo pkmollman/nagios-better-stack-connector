@@ -56,7 +56,7 @@ NAGIOS_THRUK_SITE_NAME=''
 ## TODO
 
 - [ ] pass nagios ack comment to better stack
-- [ ] add support for host notifications
+- [X] add support for host notifications
 - [ ] handle multiple notifications for same problem
 - [ ] handle multiple fast crit to recovers from nagios....
 - [ ] make unit file and stuff
