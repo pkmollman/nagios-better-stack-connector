@@ -69,7 +69,6 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 		"comment_data": comment,
 	}
 
-	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(commandMap)
 	if err != nil {
 		return err
@@ -84,14 +83,6 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 	if err != nil {
 		return err
 	}
-
-	// // print response body
-	// b, err := io.ReadAll(res.Body)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// fmt.Println(string(b))
 
 	return nil
 }

@@ -74,6 +74,7 @@ func StartServer() {
 
 		incidentName := "placeholder - incident name"
 
+		// identify event as either host or service problem
 		if event.NagiosProblemServiceName != "" {
 			incidentName = fmt.Sprintf("[%s] - [%s]", event.NagiosProblemHostname, event.NagiosProblemServiceName)
 			event.NagiosProblemType = "SERVICE"
@@ -84,6 +85,7 @@ func StartServer() {
 
 		slog.Info("Incoming notification: " + incidentName + " problemId " + event.Id)
 
+		// handle creating indicents for new problems, and acking/resolving existing problems
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
 			slog.Info("Creating incident: " + incidentName)
@@ -122,7 +124,6 @@ func StartServer() {
 				}
 			}
 		case "RECOVERY":
-			slog.Info("Resolving incident logic goes here: " + incidentName)
 			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
 
 			for _, item := range items {
@@ -158,6 +159,7 @@ func StartServer() {
 			return
 		}
 
+		// ack nagios services/host problems based off incident ID, only act on acknowledged and resolved events
 		if event.Data.Attributes.Status == "acknowledged" || event.Data.Attributes.Status == "resolved" {
 			var eventData database.EventItem
 
