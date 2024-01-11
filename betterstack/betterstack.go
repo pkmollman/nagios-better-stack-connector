@@ -58,7 +58,7 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 		EscalationPolicyId string `json:"policy_id"`
 	}
 
-	// betterStackIncident.RequesterEmail = "mollman@uoregon.edu"
+	betterStackIncident.RequesterEmail = "bec@uoregon.edu"
 	betterStackIncident.IncidentName = incidentName
 	betterStackIncident.Summary = incidentCause
 	betterStackIncident.Description = incidentCause
@@ -108,7 +108,7 @@ func (b *BetterStackClient) AcknowledgeIncident(incidentId string) error {
 		AckedBy string `json:"acknowledged_by,omitempty"`
 	}
 
-	// betterStackAck.AckedBy = "mollman@uoregon.edu"
+	betterStackAck.AckedBy = "bec@uoregon.edu"
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
@@ -143,7 +143,7 @@ func (b *BetterStackClient) ResolveIncident(incidentId string) error {
 		ResolvedBy string `json:"resolved_by,omitempty"`
 	}
 
-	// betterStackAck.ResolvedBy = "mollman@uoregon.edu"
+	betterStackAck.ResolvedBy = "bec@uoregon.edu"
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
