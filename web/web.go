@@ -176,25 +176,51 @@ func StartServer() {
 				http.Error(w, "Could not find event", http.StatusBadRequest)
 				return
 			} else {
-				// check if it is already acknowledged or recovered
-				serviceState, err := nagiosClient.GetServiceState(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName)
-				if err != nil {
-					slog.Error("Failed to get service ack state: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-
-				if serviceState.Acknowledged == 0 && serviceState.State != 0 {
-					err = nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+				switch eventData.NagiosProblemType {
+				case "HOST":
+					// host logic
+					// check if it is already acknowledged or recovered
+					hostState, err := nagiosClient.GetHostState(eventData.NagiosProblemHostname)
 					if err != nil {
-						slog.Error("Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+						slog.Error("Failed to get host ack state: " + eventData.NagiosProblemHostname)
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
-					} else {
-						slog.Info("Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 					}
-				} else {
-					slog.Info("Service already acknowledged, or recovered: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+
+					if hostState.Acknowledged == 0 && hostState.State != 0 {
+						err = nagiosClient.AckHost(eventData.NagiosProblemHostname, "Acknowledged by BetterStack")
+						if err != nil {
+							slog.Error("Failed to acknowledge host: " + eventData.NagiosProblemHostname)
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+							return
+						} else {
+							slog.Info("Acknowledged host: " + eventData.NagiosProblemHostname)
+						}
+					} else {
+						slog.Info("Host already acknowledged, or recovered: " + eventData.NagiosProblemHostname)
+					}
+
+				case "SERVICE":
+					// check if it is already acknowledged or recovered
+					serviceState, err := nagiosClient.GetServiceState(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName)
+					if err != nil {
+						slog.Error("Failed to get service ack state: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+
+					if serviceState.Acknowledged == 0 && serviceState.State != 0 {
+						err = nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
+						if err != nil {
+							slog.Error("Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+							return
+						} else {
+							slog.Info("Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+						}
+					} else {
+						slog.Info("Service already acknowledged, or recovered: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+					}
 				}
 			}
 		}

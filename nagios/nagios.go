@@ -115,3 +115,55 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 
 	return serviceStateResponse[0], nil
 }
+
+type HostState struct {
+	Acknowledged int `json:"acknowledged"`
+	State        int `json:"state"`
+}
+
+func (n *NagiosClient) GetHostState(host string) (HostState, error) {
+	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/hosts/%s", n.siteName, host), nil)
+	if err != nil {
+		return HostState{}, err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return HostState{}, err
+	}
+
+	var hostStateResponse []HostState
+	err = json.NewDecoder(res.Body).Decode(&hostStateResponse)
+	if err != nil {
+		return HostState{}, err
+	}
+
+	if len(hostStateResponse) != 1 {
+		return HostState{}, fmt.Errorf("failed to get service state")
+	}
+
+	return hostStateResponse[0], nil
+}
+
+func (n *NagiosClient) AckHost(host, comment string) error {
+	commandMap := map[string]string{
+		"comment_data": comment,
+	}
+
+	jsonBody, err := json.Marshal(commandMap)
+	if err != nil {
+		return err
+	}
+
+	req, err := n.NewRequest("POST", fmt.Sprintf("/%s/thruk/r/hosts/%s/cmd/acknowledge_host_problem", n.siteName, host), bytes.NewReader(jsonBody))
+	if err != nil {
+		return err
+	}
+
+	_, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
