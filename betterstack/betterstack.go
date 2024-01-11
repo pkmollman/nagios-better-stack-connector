@@ -46,7 +46,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId string) (string, error) {
 	// create it
 	var betterStackIncident struct {
-		RequesterEmail     string `json:"requester_email"`
+		RequesterEmail     string `json:"requester_email,omitempty"`
 		IncidentName       string `json:"name"`
 		Summary            string `json:"summary"`
 		Description        string `json:"description"`
@@ -58,7 +58,7 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 		EscalationPolicyId string `json:"policy_id"`
 	}
 
-	betterStackIncident.RequesterEmail = "mollman@uoregon.edu"
+	// betterStackIncident.RequesterEmail = "mollman@uoregon.edu"
 	betterStackIncident.IncidentName = incidentName
 	betterStackIncident.Summary = incidentCause
 	betterStackIncident.Description = incidentCause
@@ -105,10 +105,10 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 func (b *BetterStackClient) AcknowledgeIncident(incidentId string) error {
 	// create it
 	var betterStackAck struct {
-		AckedBy string `json:"acknowledged_by"`
+		AckedBy string `json:"acknowledged_by,omitempty"`
 	}
 
-	betterStackAck.AckedBy = "mollman@uoregon.edu"
+	// betterStackAck.AckedBy = "mollman@uoregon.edu"
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
@@ -140,10 +140,10 @@ func (b *BetterStackClient) AcknowledgeIncident(incidentId string) error {
 func (b *BetterStackClient) ResolveIncident(incidentId string) error {
 	// create it
 	var betterStackAck struct {
-		ResolvedBy string `json:"resolved_by"`
+		ResolvedBy string `json:"resolved_by,omitempty"`
 	}
 
-	betterStackAck.ResolvedBy = "mollman@uoregon.edu"
+	// betterStackAck.ResolvedBy = "mollman@uoregon.edu"
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
