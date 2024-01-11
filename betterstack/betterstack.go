@@ -62,7 +62,7 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 	betterStackIncident.IncidentName = incidentName
 	betterStackIncident.Summary = incidentCause
 	betterStackIncident.Description = incidentCause
-	betterStackIncident.EscalationPolicyId = "94804"
+	betterStackIncident.EscalationPolicyId = "94867"
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackIncident)
