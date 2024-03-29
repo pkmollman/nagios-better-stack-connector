@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type NagiosClient struct {
@@ -96,6 +97,10 @@ type ServiceState struct {
 }
 
 func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, error) {
+	// url encode host and service
+
+	host = url.QueryEscape(host)
+	service = url.QueryEscape(service)
 	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/services/%s/%s", n.siteName, host, service), nil)
 	if err != nil {
 		return ServiceState{}, err
@@ -130,6 +135,7 @@ type HostState struct {
 }
 
 func (n *NagiosClient) GetHostState(host string) (HostState, error) {
+	host = url.QueryEscape(host)
 	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/hosts/%s", n.siteName, host), nil)
 	if err != nil {
 		return HostState{}, err
@@ -167,6 +173,8 @@ func (n *NagiosClient) AckHost(host, comment string) error {
 	if err != nil {
 		return err
 	}
+
+	host = url.QueryEscape(host)
 
 	req, err := n.NewRequest("POST", fmt.Sprintf("/%s/thruk/r/hosts/%s/cmd/acknowledge_host_problem", n.siteName, host), bytes.NewReader(jsonBody))
 	if err != nil {
