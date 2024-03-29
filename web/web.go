@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,7 +29,7 @@ func getEnvVarOrPanic(key string) string {
 }
 
 func logRequest(r *http.Request) {
-	slog.Info(fmt.Sprintf("%s %s %s", r.Method, r.URL, r.Proto))
+	fmt.Println(fmt.Sprintf("INFO %s %s %s", r.Method, r.URL, r.Proto))
 }
 
 func StartServer() {
@@ -108,7 +107,7 @@ func StartServer() {
 			event.NagiosProblemHostname == "" ||
 			event.BetterStackPolicyId == "" {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
-			slog.Info("Missing required fields, ignoring")
+			fmt.Println("INFO Missing required fields, ignoring")
 			return
 		}
 
@@ -123,7 +122,7 @@ func StartServer() {
 			event.NagiosProblemType = "HOST"
 		}
 
-		slog.Info("Incoming notification: " + incidentName + " problemId " + event.Id)
+		fmt.Println("INFO Incoming notification: " + incidentName + " problemId " + event.Id)
 
 		// handle creating indicents for new problems, and acking/resolving existing problems
 		switch event.NagiosProblemNotificationType {
@@ -140,17 +139,16 @@ func StartServer() {
 					item.NagiosProblemType == event.NagiosProblemType &&
 					item.NagiosSiteName == event.NagiosSiteName &&
 					item.BetterStackPolicyId == event.BetterStackPolicyId {
-					slog.Info("Ignoring superfluous nagios notification for incident: \"" + incidentName + "\"")
+					fmt.Println("INFO Ignoring superfluous nagios notification for incident: \"" + incidentName + "\"")
 					w.WriteHeader(http.StatusOK)
 					return
 				}
 			}
 
-			slog.Info("Creating incident: " + incidentName)
+			fmt.Println("INFO Creating incident: " + incidentName)
 			betterStackIncidentId, err := betterStackClient.CreateIncident(event.BetterStackPolicyId, betterDefaultContactEmail, incidentName, event.NagiosProblemContent, event.Id)
 			if err != nil {
-				slog.Error("Failed to create incident: " + incidentName)
-				slog.Error(err.Error())
+				fmt.Println("ERROR Failed to create incident: " + incidentName + " " + err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -159,12 +157,12 @@ func StartServer() {
 
 			err = dbClient.CreateEventItem(event)
 			if err != nil {
-				slog.Error("Failed to create event item: " + incidentName)
+				fmt.Println("ERROR Failed to create event item: " + incidentName + " " + err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			slog.Info("Created incident: " + incidentName)
+			fmt.Println("INFO Created incident: " + incidentName)
 		case "ACKNOWLEDGEMENT":
 			items, _ := dbClient.GetAllEventItems()
 
@@ -177,19 +175,18 @@ func StartServer() {
 					item.BetterStackPolicyId == event.BetterStackPolicyId {
 					ackerr := betterStackClient.AcknowledgeIncident(event.InteractingUserEmail, betterDefaultContactEmail, item.BetterStackIncidentId)
 					if ackerr != nil {
-						slog.Error("Failed to acknowledge incident: " + incidentName)
-						slog.Error(ackerr.Error())
+						fmt.Println("ERROR Failed to acknowledge incident: " + incidentName + " " + err.Error())
 						http.Error(w, ackerr.Error(), http.StatusInternalServerError)
 						return
 					} else {
-						slog.Info("Acknowledged incident: " + incidentName + " " + item.BetterStackIncidentId)
+						fmt.Println("INFO Acknowledged incident: " + incidentName + " " + item.BetterStackIncidentId)
 					}
 				}
 			}
 		case "RECOVERY":
 			items, err := dbClient.GetAllEventItems()
 			if err != nil {
-				slog.Error("Failed to get all event items")
+				fmt.Println("ERROR Failed to get all event items: " + err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -202,18 +199,17 @@ func StartServer() {
 					item.BetterStackPolicyId == event.BetterStackPolicyId {
 					ackerr := betterStackClient.ResolveIncident(event.InteractingUserEmail, betterDefaultContactEmail, item.BetterStackIncidentId)
 					if ackerr != nil {
-						slog.Error("Failed to resolve incident: " + incidentName)
-						slog.Error(ackerr.Error())
+						fmt.Println("ERROR Failed to resolve incident: " + incidentName + " " + err.Error())
 						http.Error(w, ackerr.Error(), http.StatusInternalServerError)
 						return
 					} else {
-						slog.Info("Resolved incident: " + incidentName + " " + item.BetterStackIncidentId)
+						fmt.Println("INFO Resolved incident: " + incidentName + " " + item.BetterStackIncidentId)
 					}
 				}
 			}
 		default:
 			// ignore it
-			slog.Info("Ignoring incoming notification: " + incidentName + " STATUS " + event.NagiosProblemNotificationType)
+			fmt.Println("INFO Ignoring incoming notification: " + incidentName + " STATUS " + event.NagiosProblemNotificationType)
 		}
 
 		// return success
@@ -227,6 +223,7 @@ func StartServer() {
 
 		err := json.NewDecoder(r.Body).Decode(&event)
 		if err != nil {
+			fmt.Println("ERROR Failed to decode better stack playload: " + err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -237,7 +234,7 @@ func StartServer() {
 
 			items, err := dbClient.GetAllEventItems()
 			if err != nil {
-				slog.Error("Failed to get all event items")
+				fmt.Println("ERROR Failed to get all event items: " + err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -249,7 +246,7 @@ func StartServer() {
 			}
 
 			if eventData.Id == "" {
-				slog.Error("Could not find event for betterstack incident id: " + event.Data.Id)
+				fmt.Println("ERROR Could not find event for betterstack incident id: " + event.Data.Id)
 				http.Error(w, "Could not find event", http.StatusBadRequest)
 				return
 			} else {
@@ -258,7 +255,7 @@ func StartServer() {
 					// check if it is already acknowledged or recovered
 					hostState, err := nagiosClient.GetHostState(eventData.NagiosProblemHostname)
 					if err != nil {
-						slog.Error("Failed to get host ack state: " + eventData.NagiosProblemHostname)
+						fmt.Println("ERROR Failed to get host ack state: " + eventData.NagiosProblemHostname)
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
 					}
@@ -266,21 +263,21 @@ func StartServer() {
 					if hostState.Acknowledged == 0 && hostState.State != 0 {
 						err = nagiosClient.AckHost(eventData.NagiosProblemHostname, "Acknowledged by BetterStack")
 						if err != nil {
-							slog.Error("Failed to acknowledge host: " + eventData.NagiosProblemHostname)
+							fmt.Println("ERROR Failed to acknowledge host: " + eventData.NagiosProblemHostname)
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 							return
 						} else {
-							slog.Info("Acknowledged host: " + eventData.NagiosProblemHostname)
+							fmt.Println("INFO Acknowledged host: " + eventData.NagiosProblemHostname)
 						}
 					} else {
-						slog.Info("Host already acknowledged, or recovered: " + eventData.NagiosProblemHostname)
+						fmt.Println("INFO Host already acknowledged, or recovered: " + eventData.NagiosProblemHostname)
 					}
 
 				case "SERVICE":
 					// check if it is already acknowledged or recovered
 					serviceState, err := nagiosClient.GetServiceState(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName)
 					if err != nil {
-						slog.Error("Failed to get service ack state: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+						fmt.Println("ERROR Failed to get service ack state: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 						return
 					}
@@ -288,14 +285,14 @@ func StartServer() {
 					if serviceState.Acknowledged == 0 && serviceState.State != 0 {
 						err = nagiosClient.AckService(eventData.NagiosProblemHostname, eventData.NagiosProblemServiceName, "Acknowledged by BetterStack")
 						if err != nil {
-							slog.Error("Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+							fmt.Println("ERROR Failed to acknowledge service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 							return
 						} else {
-							slog.Info("Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+							fmt.Println("INFO Acknowledged service: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 						}
 					} else {
-						slog.Info("Service already acknowledged, or recovered: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
+						fmt.Println("INFO Service already acknowledged, or recovered: " + eventData.NagiosProblemHostname + " " + eventData.NagiosProblemServiceName)
 					}
 				}
 			}
