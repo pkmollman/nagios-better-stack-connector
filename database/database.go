@@ -14,5 +14,5 @@ type DatabaseClient interface {
 	GetAllEventItems() ([]models.EventItem, error)
 	Lock()
 	Unlock()
-	Shutdown()
+	Shutdown() error
 }

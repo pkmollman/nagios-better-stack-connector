@@ -32,13 +32,17 @@ func (s *SqlliteClient) Init(db *sql.DB) error {
 	return nil
 }
 
-func (s *SqlliteClient) Shutdown() {
-	s.db.Close()
+func (s *SqlliteClient) Shutdown() error {
+	err := s.db.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *SqlliteClient) CreateEventItemTable() error {
 	_, err := s.db.Exec(`
-	CREATE TABLE IF NOT EXISTS event (
+	CREATE TABLE IF NOT EXISTS events (
 		id INTEGER PRIMARY KEY,
 		nagiosSiteName TEXT,
 		nagiosProblemId INTEGER,
@@ -47,6 +51,7 @@ func (s *SqlliteClient) CreateEventItemTable() error {
 		nagiosProblemServiceName TEXT,
 		nagiosProblemContent TEXT,
 		nagiosProblemNotificationType TEXT,
+		betterStackPolicyId TEXT,
 		betterStackIncidentId TEXT )`)
 
 	if err != nil {
@@ -58,7 +63,7 @@ func (s *SqlliteClient) CreateEventItemTable() error {
 func (s *SqlliteClient) CreateEventItem(item models.EventItem) error {
 	// insert into database
 	insetStmt, err := s.db.Prepare(`
-	INSERT INTO event (
+	INSERT INTO events (
 		nagiosSiteName,
 		nagiosProblemId,
 		nagiosProblemType,
@@ -100,8 +105,9 @@ func (s *SqlliteClient) GetAllEventItems() ([]models.EventItem, error) {
 		nagiosProblemServiceName,
 		nagiosProblemContent,
 		nagiosProblemNotificationType,
+		betterStackPolicyId,
 		betterStackIncidentId
-	FROM event
+	FROM events
 	`)
 	if err != nil {
 		return nil, err
@@ -117,7 +123,18 @@ func (s *SqlliteClient) GetAllEventItems() ([]models.EventItem, error) {
 	items := []models.EventItem{}
 	for rows.Next() {
 		var item models.EventItem
-		err := rows.Scan(&item.Id, &item.NagiosSiteName, &item.NagiosProblemId, &item.NagiosProblemType)
+		err := rows.Scan(
+			&item.Id,
+			&item.NagiosSiteName,
+			&item.NagiosProblemId,
+			&item.NagiosProblemType,
+			&item.NagiosProblemHostname,
+			&item.NagiosProblemServiceName,
+			&item.NagiosProblemContent,
+			&item.NagiosProblemNotificationType,
+			&item.BetterStackPolicyId,
+			&item.BetterStackIncidentId,
+		)
 		if err != nil {
 			return nil, err
 		}

@@ -1,16 +1,20 @@
 package web
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/data/azcosmos"
 	"github.com/pkmollman/nagios-better-stack-connector/betterstack"
 	"github.com/pkmollman/nagios-better-stack-connector/database"
+	"github.com/pkmollman/nagios-better-stack-connector/database/sqlitedb"
+	"github.com/pkmollman/nagios-better-stack-connector/models"
 	"github.com/pkmollman/nagios-better-stack-connector/nagios"
 )
 
@@ -29,11 +33,8 @@ func logRequest(r *http.Request) {
 
 func StartServer() {
 
-	// COSMOS DB
-	endpoint := getEnvVarOrPanic("AZURE_COSMOS_ENDPOINT")
-	key := getEnvVarOrPanic("AZURE_COSMOS_KEY")
-	databaseName := getEnvVarOrPanic("AZURE_COSMOS_DATABASE")
-	containerName := getEnvVarOrPanic("AZURE_COSMOS_CONTAINER")
+	// DB
+	sqliteDbPath := getEnvVarOrPanic("SQLITE_DB_PATH")
 
 	// BetterStack
 	betterStackApiKey := getEnvVarOrPanic("BETTER_STACK_API_KEY")
@@ -44,16 +45,26 @@ func StartServer() {
 	nagiosBaseUrl := getEnvVarOrPanic("NAGIOS_THRUK_BASE_URL")
 	nagiosSiteName := getEnvVarOrPanic("NAGIOS_THRUK_SITE_NAME")
 
-	// connect to COSMOS DB
-	cred, err := azcosmos.NewKeyCredential(key)
+	// // connect to COSMOS DB
+	// cred, err := azcosmos.NewKeyCredential(key)
+	// if err != nil {
+	// 	log.Fatal("Failed to create a credential: ", err)
+	// }
+
+	// client, err := azcosmos.NewClientWithKey(endpoint, cred, nil)
+	// if err != nil {
+	// 	log.Fatal("Failed to create Azure Cosmos DB client: ", err)
+	// }
+	//
+
+	// sqlite
+	db, err := sql.Open("sqlite", sqliteDbPath)
 	if err != nil {
-		log.Fatal("Failed to create a credential: ", err)
+		log.Fatal(err)
 	}
 
-	client, err := azcosmos.NewClientWithKey(endpoint, cred, nil)
-	if err != nil {
-		log.Fatal("Failed to create Azure Cosmos DB client: ", err)
-	}
+	var dbClient database.DatabaseClient = &sqlitedb.SqlliteClient{}
+	dbClient.Init(db)
 
 	// create betterstack client
 	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
@@ -62,9 +73,11 @@ func StartServer() {
 	nagiosClient := nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
 
 	/// Handle Incoming Nagios Notifications
-	http.HandleFunc("/api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("POST /api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
 		logRequest(r)
-		var event database.EventItem
+		dbClient.Lock()
+		defer dbClient.Unlock()
+		var event models.EventItem
 
 		err := json.NewDecoder(r.Body).Decode(&event)
 		if err != nil {
@@ -90,17 +103,18 @@ func StartServer() {
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
 			slog.Info("Creating incident: " + incidentName)
-			betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
-			if err != nil {
-				slog.Error("Failed to create incident: " + incidentName)
-				slog.Error(err.Error())
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			// betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
+			// if err != nil {
+			// 	slog.Error("Failed to create incident: " + incidentName)
+			// 	slog.Error(err.Error())
+			// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+			// 	return
+			// }
 
+			betterStackIncidentId := "placeholder - betterstack incident id"
 			event.BetterStackIncidentId = betterStackIncidentId
 
-			err = database.CreateEventItem(client, databaseName, containerName, event.NagiosSiteName, event)
+			err = dbClient.CreateEventItem(event)
 			if err != nil {
 				slog.Error("Failed to create event item: " + incidentName)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -109,11 +123,13 @@ func StartServer() {
 
 			slog.Info("Created incident: " + incidentName)
 		case "ACKNOWLEDGEMENT":
-			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
+			items, _ := dbClient.GetAllEventItems()
 
 			for _, item := range items {
-				if item.NagiosProblemId == event.NagiosProblemId {
-					ackerr := betterStackClient.AcknowledgeIncident(item.BetterStackIncidentId)
+				if item.NagiosProblemId == event.NagiosProblemId &&
+					item.NagiosSiteName == event.NagiosSiteName {
+					// ackerr := betterStackClient.AcknowledgeIncident(item.BetterStackIncidentId)
+					var ackerr error = nil
 					if ackerr != nil {
 						slog.Error("Failed to acknowledge incident: " + incidentName)
 						slog.Error(ackerr.Error())
@@ -125,11 +141,20 @@ func StartServer() {
 				}
 			}
 		case "RECOVERY":
-			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
+			items, err := dbClient.GetAllEventItems()
+			if err != nil {
+				slog.Error("Failed to get all event items")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
 			for _, item := range items {
-				if item.NagiosProblemType == event.NagiosProblemType && item.NagiosProblemHostname == event.NagiosProblemHostname && item.NagiosProblemServiceName == event.NagiosProblemServiceName {
-					ackerr := betterStackClient.ResolveIncident(item.BetterStackIncidentId)
+				if item.NagiosProblemType == event.NagiosProblemType &&
+					item.NagiosSiteName == event.NagiosSiteName &&
+					item.NagiosProblemHostname == event.NagiosProblemHostname &&
+					item.NagiosProblemServiceName == event.NagiosProblemServiceName {
+					// ackerr := betterStackClient.ResolveIncident(item.BetterStackIncidentId)
+					var ackerr error = nil
 					if ackerr != nil {
 						slog.Error("Failed to resolve incident: " + incidentName)
 						slog.Error(ackerr.Error())
@@ -162,9 +187,14 @@ func StartServer() {
 
 		// ack nagios services/host problems based off incident ID, only act on acknowledged and resolved events
 		if event.Data.Attributes.Status == "acknowledged" || event.Data.Attributes.Status == "resolved" {
-			var eventData database.EventItem
+			var eventData models.EventItem
 
-			items, _ := database.GetAllEventItems(client, databaseName, containerName, nagiosSiteName)
+			items, err := dbClient.GetAllEventItems()
+			if err != nil {
+				slog.Error("Failed to get all event items")
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
 			for _, item := range items {
 				if item.BetterStackIncidentId == event.Data.Id {
@@ -230,14 +260,18 @@ func StartServer() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// serve
-	goFuncPort := os.Getenv("FUNCTIONS_CUSTOMHANDLER_PORT")
-	if goFuncPort != "" {
-		fmt.Println("Running in Azure Functions")
-		fmt.Println("Listening on port " + goFuncPort)
-		log.Fatal(http.ListenAndServe(":"+goFuncPort, nil))
-	} else {
+	go func() {
 		fmt.Println("Listening on port 8080")
 		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
+
+	// wait for signal to shutdown
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	<-signals
+	fmt.Println("Server shutting down")
+	err = dbClient.Shutdown()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
