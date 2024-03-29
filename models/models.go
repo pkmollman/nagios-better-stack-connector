@@ -3,7 +3,7 @@ package models
 type EventItem struct {
 	Id                       string `json:"id"`
 	NagiosSiteName           string `json:"nagiosSiteName"`
-	NagiosProblemId          int    `json:"nagiosProblemId"`
+	NagiosProblemId          string `json:"nagiosProblemId"`
 	NagiosProblemType        string `json:"nagiosProblemType"`
 	NagiosProblemHostname    string `json:"nagiosProblemHostname"`
 	NagiosProblemServiceName string `json:"nagiosProblemServiceName"`
@@ -24,4 +24,5 @@ type EventItem struct {
 // 	"nagiosProblemNotificationType": "PROBLEM",
 // 	"betterStackPolicyId": "some-policy-id",
 // 	"nagiosProblemId": 23123,
+// 	"interactingUserEmail": "some-email"
 // }

@@ -102,7 +102,7 @@ func StartServer() {
 			return
 		}
 
-		if event.NagiosProblemId == 0 ||
+		if event.NagiosProblemId == "" ||
 			event.NagiosSiteName == "" ||
 			event.NagiosProblemNotificationType == "" ||
 			event.NagiosProblemHostname == "" ||

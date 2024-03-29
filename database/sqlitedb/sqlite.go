@@ -45,7 +45,7 @@ func (s *SqlliteClient) CreateEventItemTable() error {
 	CREATE TABLE IF NOT EXISTS events (
 		id INTEGER PRIMARY KEY,
 		nagiosSiteName TEXT,
-		nagiosProblemId INTEGER,
+		nagiosProblemId TEXT,
 		nagiosProblemType TEXT,
 		nagiosProblemHostname TEXT,
 		nagiosProblemServiceName TEXT,
