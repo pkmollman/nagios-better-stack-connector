@@ -155,7 +155,6 @@ func StartServer() {
 				return
 			}
 
-			// betterStackIncidentId := "placeholder - betterstack incident id"
 			event.BetterStackIncidentId = betterStackIncidentId
 
 			err = dbClient.CreateEventItem(event)
@@ -171,7 +170,11 @@ func StartServer() {
 
 			for _, item := range items {
 				if item.NagiosProblemId == event.NagiosProblemId &&
-					item.NagiosSiteName == event.NagiosSiteName {
+					item.NagiosSiteName == event.NagiosSiteName &&
+					item.NagiosProblemHostname == event.NagiosProblemHostname &&
+					item.NagiosProblemServiceName == event.NagiosProblemServiceName &&
+					item.NagiosProblemType == event.NagiosProblemType &&
+					item.BetterStackPolicyId == event.BetterStackPolicyId {
 					ackerr := betterStackClient.AcknowledgeIncident(event.InteractingUserEmail, betterDefaultContactEmail, item.BetterStackIncidentId)
 					if ackerr != nil {
 						slog.Error("Failed to acknowledge incident: " + incidentName)
@@ -218,7 +221,7 @@ func StartServer() {
 	})
 
 	/// Handle Incoming Better Stack Webhooks
-	http.HandleFunc("/api/better-stack-event", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("POST /api/better-stack-event", func(w http.ResponseWriter, r *http.Request) {
 		logRequest(r)
 		var event betterstack.BetterStackIncidentWebhookPayload
 
@@ -252,7 +255,6 @@ func StartServer() {
 			} else {
 				switch eventData.NagiosProblemType {
 				case "HOST":
-					// host logic
 					// check if it is already acknowledged or recovered
 					hostState, err := nagiosClient.GetHostState(eventData.NagiosProblemHostname)
 					if err != nil {
