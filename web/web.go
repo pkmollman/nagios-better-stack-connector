@@ -40,7 +40,7 @@ func StartServer() {
 
 	// BetterStack
 	betterStackApiKey := getEnvVarOrPanic("BETTER_STACK_API_KEY")
-	betterContactEmail := getEnvVarOrPanic("BETTER_STACK_CONTACT_EMAIL")
+	betterDefaultContactEmail := getEnvVarOrPanic("BETTER_STACK_DEFAULT_CONTACT_EMAIL")
 
 	// Nagios
 	nagiosUser := getEnvVarOrPanic("NAGIOS_THRUK_API_USER")
@@ -70,7 +70,7 @@ func StartServer() {
 	dbClient.Init(db)
 
 	// create betterstack client
-	_ = betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
+	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
 
 	// create nagios client
 	nagiosClient := nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
@@ -102,6 +102,16 @@ func StartServer() {
 			return
 		}
 
+		if event.NagiosProblemId == 0 ||
+			event.NagiosSiteName == "" ||
+			event.NagiosProblemNotificationType == "" ||
+			event.NagiosProblemHostname == "" ||
+			event.BetterStackPolicyId == "" {
+			http.Error(w, "Missing required fields", http.StatusBadRequest)
+			slog.Info("Missing required fields, ignoring")
+			return
+		}
+
 		incidentName := "placeholder - incident name"
 
 		// identify event as either host or service problem
@@ -116,7 +126,6 @@ func StartServer() {
 		slog.Info("Incoming notification: " + incidentName + " problemId " + event.Id)
 
 		// handle creating indicents for new problems, and acking/resolving existing problems
-		// TODO - handle incoming notifications for existing incidents
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
 			// check if incident already exists
@@ -126,11 +135,11 @@ func StartServer() {
 				return
 			}
 
-			for _, e := range events {
-				if e.NagiosProblemId == event.NagiosProblemId &&
-					e.NagiosProblemType == event.NagiosProblemType &&
-					e.NagiosSiteName == event.NagiosSiteName &&
-					e.BetterStackPolicyId == event.BetterStackPolicyId {
+			for _, item := range events {
+				if item.NagiosProblemId == event.NagiosProblemId &&
+					item.NagiosProblemType == event.NagiosProblemType &&
+					item.NagiosSiteName == event.NagiosSiteName &&
+					item.BetterStackPolicyId == event.BetterStackPolicyId {
 					slog.Info("Ignoring superfluous nagios notification for incident: \"" + incidentName + "\"")
 					w.WriteHeader(http.StatusOK)
 					return
@@ -138,15 +147,15 @@ func StartServer() {
 			}
 
 			slog.Info("Creating incident: " + incidentName)
-			// betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
-			// if err != nil {
-			// 	slog.Error("Failed to create incident: " + incidentName)
-			// 	slog.Error(err.Error())
-			// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-			// 	return
-			// }
+			betterStackIncidentId, err := betterStackClient.CreateIncident(event.BetterStackPolicyId, betterDefaultContactEmail, incidentName, event.NagiosProblemContent, event.Id)
+			if err != nil {
+				slog.Error("Failed to create incident: " + incidentName)
+				slog.Error(err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-			betterStackIncidentId := "placeholder - betterstack incident id"
+			// betterStackIncidentId := "placeholder - betterstack incident id"
 			event.BetterStackIncidentId = betterStackIncidentId
 
 			err = dbClient.CreateEventItem(event)
@@ -163,8 +172,7 @@ func StartServer() {
 			for _, item := range items {
 				if item.NagiosProblemId == event.NagiosProblemId &&
 					item.NagiosSiteName == event.NagiosSiteName {
-					// ackerr := betterStackClient.AcknowledgeIncident(item.BetterStackIncidentId)
-					var ackerr error = nil
+					ackerr := betterStackClient.AcknowledgeIncident(event.InteractingUserEmail, betterDefaultContactEmail, item.BetterStackIncidentId)
 					if ackerr != nil {
 						slog.Error("Failed to acknowledge incident: " + incidentName)
 						slog.Error(ackerr.Error())
@@ -187,9 +195,9 @@ func StartServer() {
 				if item.NagiosProblemType == event.NagiosProblemType &&
 					item.NagiosSiteName == event.NagiosSiteName &&
 					item.NagiosProblemHostname == event.NagiosProblemHostname &&
-					item.NagiosProblemServiceName == event.NagiosProblemServiceName {
-					// ackerr := betterStackClient.ResolveIncident(item.BetterStackIncidentId)
-					var ackerr error = nil
+					item.NagiosProblemServiceName == event.NagiosProblemServiceName &&
+					item.BetterStackPolicyId == event.BetterStackPolicyId {
+					ackerr := betterStackClient.ResolveIncident(event.InteractingUserEmail, betterDefaultContactEmail, item.BetterStackIncidentId)
 					if ackerr != nil {
 						slog.Error("Failed to resolve incident: " + incidentName)
 						slog.Error(ackerr.Error())

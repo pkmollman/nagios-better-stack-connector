@@ -12,6 +12,7 @@ type EventItem struct {
 	NagiosProblemNotificationType string `json:"nagiosProblemNotificationType"`
 	BetterStackPolicyId           string `json:"betterStackPolicyId"`
 	BetterStackIncidentId         string `json:"betterStackIncidentId"`
+	InteractingUserEmail          string `json:"interactingUserEmail"`
 }
 
 // json example:

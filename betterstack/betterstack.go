@@ -43,7 +43,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 	return req, nil
 }
 
-func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId string) (string, error) {
+func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, incidentName, incidentCause, alertId string) (string, error) {
 	// create it
 	var betterStackIncident struct {
 		RequesterEmail     string `json:"requester_email,omitempty"`
@@ -58,11 +58,11 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 		EscalationPolicyId string `json:"policy_id"`
 	}
 
-	betterStackIncident.RequesterEmail = "bec@uoregon.edu"
+	betterStackIncident.RequesterEmail = contact_email
 	betterStackIncident.IncidentName = incidentName
 	betterStackIncident.Summary = incidentCause
 	betterStackIncident.Description = incidentCause
-	betterStackIncident.EscalationPolicyId = "94804"
+	betterStackIncident.EscalationPolicyId = escalation_policy
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackIncident)
@@ -102,13 +102,17 @@ func (b *BetterStackClient) CreateIncident(incidentName, incidentCause, alertId 
 	return incidentResponse.Data.Id, nil
 }
 
-func (b *BetterStackClient) AcknowledgeIncident(incidentId string) error {
+func (b *BetterStackClient) AcknowledgeIncident(contact_email, default_contact_email, incidentId string) error {
 	// create it
 	var betterStackAck struct {
 		AckedBy string `json:"acknowledged_by,omitempty"`
 	}
 
-	betterStackAck.AckedBy = "bec@uoregon.edu"
+	betterStackAck.AckedBy = contact_email
+
+	if contact_email == "" {
+		betterStackAck.AckedBy = default_contact_email
+	}
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
@@ -137,13 +141,17 @@ func (b *BetterStackClient) AcknowledgeIncident(incidentId string) error {
 	return nil
 }
 
-func (b *BetterStackClient) ResolveIncident(incidentId string) error {
+func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email, incidentId string) error {
 	// create it
 	var betterStackAck struct {
 		ResolvedBy string `json:"resolved_by,omitempty"`
 	}
 
-	betterStackAck.ResolvedBy = "bec@uoregon.edu"
+	betterStackAck.ResolvedBy = contact_email
+
+	if contact_email == "" {
+		betterStackAck.ResolvedBy = default_contact_email
+	}
 
 	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
