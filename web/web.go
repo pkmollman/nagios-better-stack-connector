@@ -86,6 +86,7 @@ func StartServer() {
 		slog.Info("Incoming notification: " + incidentName + " problemId " + event.Id)
 
 		// handle creating indicents for new problems, and acking/resolving existing problems
+		// TODO - handle incoming notifications for existing incidents
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
 			slog.Info("Creating incident: " + incidentName)

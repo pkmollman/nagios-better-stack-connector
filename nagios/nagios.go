@@ -88,8 +88,11 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 }
 
 type ServiceState struct {
-	Acknowledged int `json:"acknowledged"`
-	State        int `json:"state"`
+	Acknowledged int    `json:"acknowledged"`
+	State        int    `json:"state"`
+	CheckOutput  string `json:"plugin_output"`
+	HostAddress  string `json:"host_address"`
+	HostName     string `json:"host_name"`
 }
 
 func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, error) {
@@ -102,6 +105,10 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 	if err != nil {
 		return ServiceState{}, err
 	}
+	defer res.Body.Close()
+
+	// bodyBytes, err := io.ReadAll(res.Body)
+	// println(string(bodyBytes))
 
 	var serviceStateResponse []ServiceState
 	err = json.NewDecoder(res.Body).Decode(&serviceStateResponse)
@@ -117,8 +124,9 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 }
 
 type HostState struct {
-	Acknowledged int `json:"acknowledged"`
-	State        int `json:"state"`
+	Acknowledged int    `json:"acknowledged"`
+	State        int    `json:"state"`
+	IpAddr       string `json:"address"`
 }
 
 func (n *NagiosClient) GetHostState(host string) (HostState, error) {
@@ -131,6 +139,11 @@ func (n *NagiosClient) GetHostState(host string) (HostState, error) {
 	if err != nil {
 		return HostState{}, err
 	}
+	defer res.Body.Close()
+
+	// print body
+	// bodyBytes, err := io.ReadAll(res.Body)
+	// println(string(bodyBytes))
 
 	var hostStateResponse []HostState
 	err = json.NewDecoder(res.Body).Decode(&hostStateResponse)
