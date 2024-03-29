@@ -13,3 +13,14 @@ type EventItem struct {
 	BetterStackPolicyId           string `json:"betterStackPolicyId"`
 	BetterStackIncidentId         string `json:"betterStackIncidentId"`
 }
+
+// json example:
+// {
+// 	"nagiosSiteName": "telops",
+// 	"nagiosProblemHostname": "test-host",
+// 	"nagiosProblemServiceName": "test-service",
+// 	"nagiosProblemContent": "some problem",
+// 	"nagiosProblemNotificationType": "PROBLEM",
+// 	"betterStackPolicyId": "some-policy-id",
+// 	"nagiosProblemId": 23123,
+// }

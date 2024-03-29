@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "modernc.org/sqlite"
+
 	"github.com/pkmollman/nagios-better-stack-connector/betterstack"
 	"github.com/pkmollman/nagios-better-stack-connector/database"
 	"github.com/pkmollman/nagios-better-stack-connector/database/sqlitedb"
@@ -38,6 +40,7 @@ func StartServer() {
 
 	// BetterStack
 	betterStackApiKey := getEnvVarOrPanic("BETTER_STACK_API_KEY")
+	betterContactEmail := getEnvVarOrPanic("BETTER_STACK_CONTACT_EMAIL")
 
 	// Nagios
 	nagiosUser := getEnvVarOrPanic("NAGIOS_THRUK_API_USER")
@@ -67,10 +70,24 @@ func StartServer() {
 	dbClient.Init(db)
 
 	// create betterstack client
-	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
+	_ = betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
 
 	// create nagios client
 	nagiosClient := nagios.NewNagiosClient(nagiosUser, nagiosKey, nagiosBaseUrl, nagiosSiteName)
+
+	http.HandleFunc("GET /api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
+		dbClient.Lock()
+		defer dbClient.Unlock()
+		events, err := dbClient.GetAllEventItems()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(events)
+
+	})
 
 	/// Handle Incoming Nagios Notifications
 	http.HandleFunc("POST /api/nagios-event", func(w http.ResponseWriter, r *http.Request) {
@@ -102,6 +119,24 @@ func StartServer() {
 		// TODO - handle incoming notifications for existing incidents
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
+			// check if incident already exists
+			events, err := dbClient.GetAllEventItems()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			for _, e := range events {
+				if e.NagiosProblemId == event.NagiosProblemId &&
+					e.NagiosProblemType == event.NagiosProblemType &&
+					e.NagiosSiteName == event.NagiosSiteName &&
+					e.BetterStackPolicyId == event.BetterStackPolicyId {
+					slog.Info("Ignoring superfluous nagios notification for incident: \"" + incidentName + "\"")
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+			}
+
 			slog.Info("Creating incident: " + incidentName)
 			// betterStackIncidentId, err := betterStackClient.CreateIncident(incidentName, event.NagiosProblemContent, event.Id)
 			// if err != nil {
