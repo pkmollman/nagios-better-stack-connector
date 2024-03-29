@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"log/syslog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -305,12 +304,12 @@ func StartServer() {
 	})
 
 	// Log to syslog
-	logWriter, err := syslog.New(syslog.LOG_SYSLOG, "Nagios BetterStack Connector")
-	if err != nil {
-		log.Fatalln("Unable to set logfile:", err.Error())
-	}
-	// set the log output
-	log.SetOutput(logWriter)
+	// logWriter, err := syslog.New(syslog.LOG_SYSLOG, "Nagios BetterStack Connector")
+	// if err != nil {
+	// 	log.Fatalln("Unable to set logfile:", err.Error())
+	// }
+	// // set the log output
+	// log.SetOutput(logWriter)
 
 	go func() {
 		log.Println("Listening on port 8080")
