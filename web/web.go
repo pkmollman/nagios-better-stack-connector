@@ -112,8 +112,7 @@ func StartServer() {
 			return
 		}
 
-		if event.NagiosProblemId == "" ||
-			event.NagiosSiteName == "" ||
+		if event.NagiosSiteName == "" ||
 			event.NagiosProblemNotificationType == "" ||
 			event.NagiosProblemHostname == "" ||
 			event.BetterStackPolicyId == "" {
@@ -138,6 +137,10 @@ func StartServer() {
 		// handle creating indicents for new problems, and acking/resolving existing problems
 		switch event.NagiosProblemNotificationType {
 		case "PROBLEM":
+			if event.NagiosProblemId == "" {
+				http.Error(w, "Missing required field \"nagiosProblemId\"", http.StatusBadRequest)
+				return
+			}
 			// check if incident already exists
 			events, err := dbClient.GetAllEventItems()
 			if err != nil {
