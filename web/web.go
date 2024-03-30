@@ -1,9 +1,11 @@
 package web
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -96,7 +98,15 @@ func StartServer() {
 		defer dbClient.Unlock()
 		var event models.EventItem
 
-		err := json.NewDecoder(r.Body).Decode(&event)
+		// body to string
+		bodyBytes, err := io.ReadAll(r.Body)
+
+		bodyString := string(bodyBytes)
+
+		// reader from body bytes
+		bodyReader := bytes.NewReader(bodyBytes)
+
+		err = json.NewDecoder(bodyReader).Decode(&event)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -108,7 +118,7 @@ func StartServer() {
 			event.NagiosProblemHostname == "" ||
 			event.BetterStackPolicyId == "" {
 			http.Error(w, "Missing required fields", http.StatusBadRequest)
-			log.Println("INFO Missing required fields, ignoring")
+			log.Println("INFO Missing required fields, ignoring: " + bodyString)
 			return
 		}
 
