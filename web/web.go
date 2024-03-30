@@ -49,18 +49,6 @@ func StartServer() {
 	nagiosBaseUrl := getEnvVarOrPanic("NAGIOS_THRUK_BASE_URL")
 	nagiosSiteName := getEnvVarOrPanic("NAGIOS_THRUK_SITE_NAME")
 
-	// // connect to COSMOS DB
-	// cred, err := azcosmos.NewKeyCredential(key)
-	// if err != nil {
-	// 	log.Fatal("Failed to create a credential: ", err)
-	// }
-
-	// client, err := azcosmos.NewClientWithKey(endpoint, cred, nil)
-	// if err != nil {
-	// 	log.Fatal("Failed to create Azure Cosmos DB client: ", err)
-	// }
-	//
-
 	// sqlite
 	db, err := sql.Open("sqlite", sqliteDbPath)
 	if err != nil {
@@ -316,13 +304,10 @@ func StartServer() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// Log to syslog
-	// logWriter, err := syslog.New(syslog.LOG_SYSLOG, "Nagios BetterStack Connector")
-	// if err != nil {
-	// 	log.Fatalln("Unable to set logfile:", err.Error())
-	// }
-	// // set the log output
-	// log.SetOutput(logWriter)
+	http.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
 
 	go func() {
 		log.Println("Listening on port 8080")
