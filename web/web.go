@@ -312,7 +312,6 @@ func StartServer() {
 	go func() {
 		log.Println("Listening on port 8080")
 		log.Fatal(http.ListenAndServe(":8080", nil))
-
 	}()
 
 	// wait for signal to shutdown
