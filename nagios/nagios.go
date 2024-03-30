@@ -89,6 +89,7 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 }
 
 type ServiceState struct {
+	DisplayName  string `json:"display_name"`
 	Acknowledged int    `json:"acknowledged"`
 	State        int    `json:"state"`
 	CheckOutput  string `json:"plugin_output"`
@@ -101,7 +102,8 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 
 	host = url.QueryEscape(host)
 	service = url.QueryEscape(service)
-	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/services/%s/%s", n.siteName, host, service), nil)
+	// fmt.Println(fmt.Sprintf("/%s/thruk/r/services/%s/%s", n.siteName, host, service))
+	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/services?host_name=%s&description=%s", n.siteName, host, service), nil)
 	if err != nil {
 		return ServiceState{}, err
 	}
@@ -114,6 +116,7 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 
 	// bodyBytes, err := io.ReadAll(res.Body)
 	// println(string(bodyBytes))
+	//
 
 	var serviceStateResponse []ServiceState
 	err = json.NewDecoder(res.Body).Decode(&serviceStateResponse)
@@ -129,14 +132,16 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 }
 
 type HostState struct {
-	Acknowledged int    `json:"acknowledged"`
-	State        int    `json:"state"`
-	IpAddr       string `json:"address"`
+	DisplayName  string   `json:"display_name"`
+	Acknowledged int      `json:"acknowledged"`
+	State        int      `json:"state"`
+	IpAddr       string   `json:"address"`
+	Services     []string `json:"services"`
 }
 
 func (n *NagiosClient) GetHostState(host string) (HostState, error) {
 	host = url.QueryEscape(host)
-	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/hosts/%s", n.siteName, host), nil)
+	req, err := n.NewRequest("GET", fmt.Sprintf("/%s/thruk/r/hosts?name=%s", n.siteName, host), nil)
 	if err != nil {
 		return HostState{}, err
 	}
