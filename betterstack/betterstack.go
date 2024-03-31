@@ -179,3 +179,19 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 	// return success
 	return nil
 }
+
+func (b *BetterStackClient) CheckIncidentsEndpoint() error {
+	req, err := b.NewRequest("GET", "/api/v2/incidents", nil)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("Failed to request /api/v2/incidents: %s", err.Error())
+	}
+	defer res.Body.Close()
+
+	// check response
+	if res.StatusCode != 200 {
+		return fmt.Errorf("Response status code for /api/v2/incidents was %d, not 200", res.StatusCode)
+	}
+	return nil
+}

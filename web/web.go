@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"text/template"
 
 	_ "modernc.org/sqlite"
 
@@ -305,8 +307,119 @@ func StartServer() {
 	})
 
 	http.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		w.Header().Set("Content-Type", "text/plain")
+		const (
+			healthy   = "healthy"
+			unhealthy = "unhealthy"
+		)
+
+		type nbsc_service_status struct {
+			State  string   `json:"state"`
+			Errors []string `json:"errors"`
+		}
+
+		nbsc_status := struct {
+			Database    nbsc_service_status `json:"database"`
+			Nagios      nbsc_service_status `json:"nagios"`
+			BetterStack nbsc_service_status `json:"betterstack"`
+		}{
+			Database: nbsc_service_status{
+				State: healthy,
+			},
+			Nagios: nbsc_service_status{
+				State: healthy,
+			},
+			BetterStack: nbsc_service_status{
+				State: healthy,
+			},
+		}
+
+		status_text_template := `
+Database: {{.Database.State}}
+{{range .Database.Errors}}  - {{.}}
+{{end}}
+Nagios: {{.Nagios.State}}
+{{range .Nagios.Errors}}  - {{.}}
+{{end}}
+BetterStack: {{.BetterStack.State}}
+{{range .BetterStack.Errors}}  - {{.}}
+{{end}}
+`
+
+		// check database
+		dbClient.Lock()
+		_, err := dbClient.GetAllEventItems()
+		dbClient.Unlock()
+		if err != nil {
+			nbsc_status.Database.State = unhealthy
+			nbsc_status.Database.Errors = append(
+				nbsc_status.Database.Errors,
+				"Failed to get event items from database: "+err.Error(),
+			)
+		}
+
+		// check nagios
+		hosts, err := nagiosClient.GetHosts()
+		if err != nil {
+			nbsc_status.Nagios.State = unhealthy
+			nbsc_status.Nagios.Errors = append(
+				nbsc_status.Nagios.Errors,
+				"Failed to get hosts from Nagios: "+err.Error(),
+			)
+		}
+
+		// pick a random host
+		if err != nil && len(hosts) > 0 {
+			host := hosts[rand.Intn(len(hosts)-1)]
+
+			for len(host.Services) == 0 {
+				host = hosts[rand.Intn(len(hosts)-1)]
+			}
+
+			// check service
+			service, err := nagiosClient.GetServiceState(host.DisplayName, host.Services[0])
+			if err != nil {
+				nbsc_status.Nagios.State = unhealthy
+				nbsc_status.Nagios.Errors = append(
+					nbsc_status.Nagios.Errors,
+					fmt.Sprintf(`Failed to get Nagios service state for "%s" > "%s": %s`, host.DisplayName, service.DisplayName, err.Error()),
+				)
+			}
+		}
+
+		// check betterstack
+		err = betterStackClient.CheckIncidentsEndpoint()
+		if err != nil {
+			nbsc_status.BetterStack.State = unhealthy
+			nbsc_status.BetterStack.Errors = append(
+				nbsc_status.BetterStack.Errors,
+				"Failed to check BetterStack incidents endpoint: "+err.Error(),
+			)
+		}
+
+		health := healthy
+
+		format_template, err := template.New("status").Parse(status_text_template)
+		if err != nil {
+			health = unhealthy
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Failed to parse status template"))
+			return
+		}
+
+		if nbsc_status.Database.State == unhealthy ||
+			nbsc_status.Nagios.State == unhealthy ||
+			nbsc_status.BetterStack.State == unhealthy {
+			health = unhealthy
+		}
+
+		if health == healthy {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
+		format_template.Execute(w, nbsc_status)
 	})
 
 	go func() {
