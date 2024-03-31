@@ -3,25 +3,37 @@ package sqlitedb
 import (
 	"database/sql"
 
+	"github.com/pkmollman/nagios-better-stack-connector/database"
 	"github.com/pkmollman/nagios-better-stack-connector/models"
+	_ "modernc.org/sqlite"
 )
 
-type SqlliteClient struct {
+type SQLiteClient struct {
 	db         *sql.DB
 	serialChan chan struct{}
 }
 
-func (s *SqlliteClient) Lock() {
+func NewSQLiteClient(db_path string) (database.DatabaseClient, error) {
+	// sqlite
+	db, err := sql.Open("sqlite", db_path)
+	if err != nil {
+		return nil, err
+	}
+	return &SQLiteClient{
+		db: db,
+	}, nil
+}
+
+func (s *SQLiteClient) Lock() {
 	s.serialChan <- struct{}{}
 }
 
-func (s *SqlliteClient) Unlock() {
+func (s *SQLiteClient) Unlock() {
 	<-s.serialChan
 }
 
-func (s *SqlliteClient) Init(db *sql.DB) error {
+func (s *SQLiteClient) Init() error {
 	// only one operation at a time
-	s.db = db
 	s.serialChan = make(chan struct{}, 1)
 	s.Lock()
 	defer s.Unlock()
@@ -32,7 +44,7 @@ func (s *SqlliteClient) Init(db *sql.DB) error {
 	return nil
 }
 
-func (s *SqlliteClient) Shutdown() error {
+func (s *SQLiteClient) Shutdown() error {
 	err := s.db.Close()
 	if err != nil {
 		return err
@@ -40,7 +52,7 @@ func (s *SqlliteClient) Shutdown() error {
 	return nil
 }
 
-func (s *SqlliteClient) CreateEventItemTable() error {
+func (s *SQLiteClient) CreateEventItemTable() error {
 	_, err := s.db.Exec(`
 	CREATE TABLE IF NOT EXISTS events (
 		id INTEGER PRIMARY KEY,
@@ -60,7 +72,7 @@ func (s *SqlliteClient) CreateEventItemTable() error {
 	return nil
 }
 
-func (s *SqlliteClient) CreateEventItem(item models.EventItem) error {
+func (s *SQLiteClient) CreateEventItem(item models.EventItem) error {
 	// insert into database
 	insetStmt, err := s.db.Prepare(`
 	INSERT INTO events (
@@ -94,7 +106,7 @@ func (s *SqlliteClient) CreateEventItem(item models.EventItem) error {
 	return nil
 }
 
-func (s *SqlliteClient) GetAllEventItems() ([]models.EventItem, error) {
+func (s *SQLiteClient) GetAllEventItems() ([]models.EventItem, error) {
 	stmt, err := s.db.Prepare(`
 	SELECT
 		id,

@@ -7,7 +7,7 @@ Acking an incident in Nagios will update the Better Stack incident and vice vers
 
 ### Database
 
-Currently the only supported database is Azure CosmosDB. I plan to add sqlite and possibly others.
+Currently the only supported database is SQLite. I plan to add sqlite and possibly others.
 
 #### Azure CosmosDB
 
@@ -56,7 +56,7 @@ NAGIOS_THRUK_SITE_NAME=''
 ## TODO
 
 - [ ] pass nagios ack comment to better stack
-- [X] add support for host notifications
+- [x] add support for host notifications
 - [ ] handle multiple notifications for same problem
 - [ ] handle multiple fast crit to recovers from nagios....
 - [ ] make unit file and stuff

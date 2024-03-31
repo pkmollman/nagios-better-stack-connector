@@ -2,7 +2,6 @@ package web
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,8 +12,6 @@ import (
 	"os/signal"
 	"syscall"
 	"text/template"
-
-	_ "modernc.org/sqlite"
 
 	"github.com/pkmollman/nagios-better-stack-connector/betterstack"
 	"github.com/pkmollman/nagios-better-stack-connector/database"
@@ -33,11 +30,10 @@ func getEnvVarOrPanic(key string) string {
 }
 
 func logRequest(r *http.Request) {
-	log.Println(fmt.Sprintf("INFO %s %s %s", r.Method, r.URL, r.Proto))
+	log.Println(fmt.Sprintf("INFO %s %s %s %s", r.RemoteAddr, r.Method, r.URL, r.Proto))
 }
 
 func StartServer() {
-
 	// DB
 	sqliteDbPath := getEnvVarOrPanic("SQLITE_DB_PATH")
 
@@ -51,14 +47,19 @@ func StartServer() {
 	nagiosBaseUrl := getEnvVarOrPanic("NAGIOS_THRUK_BASE_URL")
 	nagiosSiteName := getEnvVarOrPanic("NAGIOS_THRUK_SITE_NAME")
 
-	// sqlite
-	db, err := sql.Open("sqlite", sqliteDbPath)
+	// create database client
+	var dbClient database.DatabaseClient
+
+	// should be able to swap this out for anything that implements the database.DatabaseClient interface
+	dbClient, err := sqlitedb.NewSQLiteClient(sqliteDbPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("unable to create database client: %s", err.Error())
 	}
 
-	var dbClient database.DatabaseClient = &sqlitedb.SqlliteClient{}
-	dbClient.Init(db)
+	err = dbClient.Init()
+	if err != nil {
+		log.Fatalf("unable to initialize database client: %s", err.Error())
+	}
 
 	// create betterstack client
 	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
@@ -307,6 +308,7 @@ func StartServer() {
 	})
 
 	http.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+		logRequest(r)
 		w.Header().Set("Content-Type", "text/plain")
 		const (
 			healthy   = "healthy"
@@ -419,7 +421,10 @@ BetterStack: {{.BetterStack.State}}
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
-		format_template.Execute(w, nbsc_status)
+		err = format_template.Execute(w, nbsc_status)
+		if err != nil {
+			log.Println("ERROR Failed to write health status template: " + err.Error())
+		}
 	})
 
 	go func() {
