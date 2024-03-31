@@ -33,6 +33,12 @@ func logRequest(r *http.Request) {
 	log.Println(fmt.Sprintf("INFO %s %s %s %s", r.RemoteAddr, r.Method, r.URL, r.Proto))
 }
 
+type WebHandler struct {
+	dbClient       *database.DatabaseClient
+	betterStackApi *betterstack.BetterStackClient
+	nagiosClient   *nagios.NagiosClient
+}
+
 func StartServer() {
 	// DB
 	sqliteDbPath := getEnvVarOrPanic("SQLITE_DB_PATH")
