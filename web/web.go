@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -126,10 +127,17 @@ func StartServer() {
 	// Handle get event items
 	mux.HandleFunc("GET /api/event-items", webHandler.handleGetEventItems)
 
+	// HTTP server
+
+	httpServer := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
 	go func() {
 		fmt.Println("Listening on port 8080")
-		lerr := http.ListenAndServe(":8080", mux)
-		if lerr != nil {
+		lerr := httpServer.ListenAndServe()
+		if lerr != nil && lerr != http.ErrServerClosed {
 			fmt.Println("Error starting server:", lerr.Error())
 			os.Exit(1)
 		}
@@ -140,11 +148,21 @@ func StartServer() {
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
 	fmt.Println("Server shutting down")
+
+	httpShutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	herr := httpServer.Shutdown(httpShutdownContext)
+	if herr != nil {
+		fmt.Println("Error gracefully shutting down http server:", herr.Error())
+	}
 	dbClient.Lock()
 	dbClient.Backup()
 	err = dbClient.Shutdown()
 	if err != nil {
 		fmt.Println(err)
+	}
+
+	if herr != nil || err != nil {
 		os.Exit(1)
 	}
 }
