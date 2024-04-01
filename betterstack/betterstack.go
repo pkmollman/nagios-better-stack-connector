@@ -132,8 +132,8 @@ func (b *BetterStackClient) AcknowledgeIncident(contact_email, default_contact_e
 	// check response
 	if res.StatusCode != 409 && res.StatusCode != 200 {
 		// print the response body
-		body, _ := io.ReadAll(res.Body)
-		fmt.Println(string(body))
+		// body, _ := io.ReadAll(res.Body)
+		// fmt.Println(string(body))
 		return fmt.Errorf("response status code was %d", res.StatusCode)
 	}
 
@@ -171,8 +171,8 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 	// check response
 	if res.StatusCode != 409 && res.StatusCode != 200 {
 		// print the response body
-		body, _ := io.ReadAll(res.Body)
-		fmt.Println(string(body))
+		// body, _ := io.ReadAll(res.Body)
+		// fmt.Println(string(body))
 		return fmt.Errorf("response status code was %d", res.StatusCode)
 	}
 

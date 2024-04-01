@@ -117,8 +117,6 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				ackerr := wh.betterStackApi.AcknowledgeIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
 					log.Println("WARN Failed to acknowledge incident: " + incidentName + " " + ackerr.Error())
-					http.Error(w, ackerr.Error(), http.StatusInternalServerError)
-					return
 				} else {
 					log.Println("INFO Acknowledged incident: " + incidentName + " " + item.BetterStackIncidentId)
 				}
@@ -141,8 +139,6 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				ackerr := wh.betterStackApi.ResolveIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
 					log.Println("WARN Failed to resolve incident: " + incidentName + " " + ackerr.Error())
-					http.Error(w, ackerr.Error(), http.StatusInternalServerError)
-					return
 				} else {
 					log.Println("INFO Resolved incident: " + incidentName + " " + item.BetterStackIncidentId)
 				}
