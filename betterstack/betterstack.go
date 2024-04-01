@@ -58,7 +58,7 @@ func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, inc
 		EscalationPolicyId string `json:"policy_id"`
 	}
 
-	betterStackIncident.RequesterEmail = "Nagios BetterStack Connector"
+	betterStackIncident.RequesterEmail = contact_email
 	betterStackIncident.IncidentName = incidentName
 	betterStackIncident.Summary = incidentCause
 	betterStackIncident.Description = incidentCause
