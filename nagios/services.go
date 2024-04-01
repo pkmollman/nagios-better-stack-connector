@@ -33,6 +33,10 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode != http.StatusOK {
+		return ServiceState{}, fmt.Errorf("Nagios returned status code %d instead of %d", res.StatusCode, http.StatusOK)
+	}
+
 	// bodyBytes, err := io.ReadAll(res.Body)
 	// println(string(bodyBytes))
 	//

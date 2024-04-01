@@ -28,17 +28,6 @@ func NewSQLiteClient(db_path, backup_directory string) (database.DatabaseClient,
 		serialChan:      make(chan struct{}, 1),
 	}
 
-	// go func() {
-	// 	for {
-	// 		time.Sleep(5 * time.Second)
-	// 		func() {
-	// 			client.Lock()
-	// 			client.db.Exec(`VACUUM INTO "backup.db"`)
-	// 			client.Unlock()
-	// 		}()
-	// 	}
-	// }()
-
 	return &client, nil
 }
 

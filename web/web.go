@@ -26,7 +26,14 @@ func getEnvVarOrPanic(key string) string {
 }
 
 func logRequest(r *http.Request) {
-	log.Println(fmt.Sprintf("INFO %s %s %s %s", r.RemoteAddr, r.Method, r.URL, r.Proto))
+	remoteAddr := r.RemoteAddr
+
+	// if X-Forwarded-For header is set, use that instead
+	if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		remoteAddr = forwardedFor
+	}
+
+	log.Println(fmt.Sprintf("INFO %s %s %s %s", remoteAddr, r.Method, r.URL, r.Proto))
 }
 
 type WebHandler struct {
