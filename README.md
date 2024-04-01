@@ -20,6 +20,7 @@ When a Host/Service comes back up in Nagios, the corresponding incident in Bette
 - [Database](#database)
 - [Better Stack](#betterstack)
 - [Nagios](#nagios)
+- [Monitoring](#monitoring)
 
 ### Systemd
 
@@ -121,4 +122,43 @@ define command {
   command_name    notify-by-betterstack
   command_line    /usr/bin/python3 $USER2$/nbsc-client.py --url 'https://is-nagios-bsc-p.uoregon.edu/api/nagios-event' --site-name 'some-site' --problem-id '$SERVICEPROBLEMID$' --problem-content '$SERVICEOUTPUT$' --service-name '$SERVICEDESC$' --host-name '$HOSTNAME$' --notification-type '$NOTIFICATIONTYPE$' --policy-id '12345' --interacting-user '$SERVICEACKAUTHOR$'
 }
+```
+
+## Monitoring
+
+The service exposes a health check endpoint at /api/health.
+It will respond with a 200 status code if the service is healthy, and a 500 status code if it is not.
+This can be used to easily monitor the connector from a BetterStack monitor.
+
+It will return plain text with a message describing the health status.
+
+Healthy response example:
+
+```
+Database: HEALTHY
+  - SUCCESS: Successfully got event items from database
+  - SUCCESS: Successfully created event item in database
+  - SUCCESS: Successfully attempted to delete event item in database
+  - SUCCESS: Successfully deleted event item in database
+
+Nagios: HEALTHY
+  - SUCCESS: Successfully got hosts from Nagios
+  - SUCCESS: Successfully got Nagios service state for HOST="some-random-host" SERVICE="some service"
+
+BetterStack: HEALTHY
+  - SUCCESS: BetterStack incidents endpoint returned status 200
+```
+
+Unhealthy response example:
+
+```
+Database: HEALTHY
+  - SUCCESS: Successfully got event items from database
+  - SUCCESS: Successfully created event item in database
+  - SUCCESS: Successfully attempted to delete event item in database
+  - SUCCESS: Successfully deleted event item in database
+Nagios: UNHEALTHY
+  - FAILURE: Failed to get hosts from Nagios: Nagios returned status code 503 instead of 200
+BetterStack: HEALTHY
+  - SUCCESS: BetterStack incidents endpoint returned status 200
 ```
