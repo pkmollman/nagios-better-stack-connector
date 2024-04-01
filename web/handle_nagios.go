@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/pkmollman/nagios-better-stack-connector/models"
 )
@@ -40,11 +41,18 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 		return
 	}
 
-	incidentName := "placeholder - incident name"
+	incidentName := "placeholder - incident name - something went wrong"
 
 	// identify event as either host or service problem
 	if event.NagiosProblemServiceName != "" {
-		incidentName = fmt.Sprintf("[%s] - [%s]", event.NagiosProblemHostname, event.NagiosProblemServiceName)
+
+		serviceName := event.NagiosProblemServiceName
+
+		if strings.TrimSpace(event.NagiosProblemServiceDisplayName) != "" {
+			serviceName = event.NagiosProblemServiceDisplayName
+		}
+
+		incidentName = fmt.Sprintf("[%s] - [%s]", event.NagiosProblemHostname, serviceName)
 		event.NagiosProblemType = "SERVICE"
 	} else {
 		incidentName = fmt.Sprintf("[%s]", event.NagiosProblemHostname)

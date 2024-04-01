@@ -1,13 +1,14 @@
 package models
 
 type EventItem struct {
-	Id                       string `json:"id"`
-	NagiosSiteName           string `json:"nagiosSiteName"`
-	NagiosProblemId          string `json:"nagiosProblemId"`
-	NagiosProblemType        string `json:"nagiosProblemType"`
-	NagiosProblemHostname    string `json:"nagiosProblemHostname"`
-	NagiosProblemServiceName string `json:"nagiosProblemServiceName"`
-	NagiosProblemContent     string `json:"nagiosProblemContent"`
+	Id                              string `json:"id"`
+	NagiosSiteName                  string `json:"nagiosSiteName"`
+	NagiosProblemId                 string `json:"nagiosProblemId"`
+	NagiosProblemType               string `json:"nagiosProblemType"`
+	NagiosProblemHostname           string `json:"nagiosProblemHostname"`
+	NagiosProblemServiceName        string `json:"nagiosProblemServiceName"`
+	NagiosProblemServiceDisplayName string `json:"nagiosProblemServiceDisplayName"`
+	NagiosProblemContent            string `json:"nagiosProblemContent"`
 	// ("PROBLEM", "RECOVERY", "ACKNOWLEDGEMENT", "FLAPPINGSTART", "FLAPPINGSTOP", "FLAPPINGDISABLED", "DOWNTIMESTART", "DOWNTIMEEND", "DOWNTIMECANCELLED")
 	NagiosProblemNotificationType string `json:"nagiosProblemNotificationType"`
 	BetterStackPolicyId           string `json:"betterStackPolicyId"`
