@@ -2,7 +2,6 @@ package web
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +18,8 @@ import (
 func getEnvVarOrPanic(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		log.Fatalf("%s environment variable could not be found", key)
+		fmt.Println("%s environment variable could not be found", key)
+		os.Exit(1)
 	}
 
 	return value
@@ -33,7 +33,7 @@ func logRequest(r *http.Request) {
 		remoteAddr = forwardedFor
 	}
 
-	log.Println(fmt.Sprintf("INFO %s %s %s %s", remoteAddr, r.Method, r.URL, r.Proto))
+	fmt.Println(fmt.Sprintf("INFO %s %s %s %s", remoteAddr, r.Method, r.URL, r.Proto))
 }
 
 type WebHandler struct {
@@ -60,7 +60,8 @@ func StartServer() {
 	// convert string to int
 	sqliteDbBackupFrequencyMinutes, err := strconv.Atoi(sqliteDbBackupFrequencyMinutesString)
 	if err != nil {
-		log.Fatalf("unable to convert SQLITE_DB_BACKUP_FREQUENCY_MINUTES to int: %s", err)
+		fmt.Println("unable to convert SQLITE_DB_BACKUP_FREQUENCY_MINUTES to int: %s", err)
+		os.Exit(1)
 	}
 
 	// BetterStack
@@ -79,17 +80,19 @@ func StartServer() {
 	// should be able to swap this out for anything that implements the database.DatabaseClient interface
 	dbClient, err = sqlitedb.NewSQLiteClient(sqliteDbPath, sqliteDbBackupDirPath)
 	if err != nil {
-		log.Fatalf("unable to create database client: %s", err.Error())
+		fmt.Println("unable to create database client: %s", err.Error())
+		os.Exit(1)
 	}
 
 	err = dbClient.Init()
 	if err != nil {
-		log.Fatalf("unable to initialize database client: %s", err.Error())
+		fmt.Println("unable to initialize database client: %s", err.Error())
+		os.Exit(1)
 	}
 
 	// start backup routine
 	go func() {
-		log.Println("Starting backup routine to backup every", sqliteDbBackupFrequencyMinutes, "minute(s)")
+		fmt.Println("Starting backup routine to backup every", sqliteDbBackupFrequencyMinutes, "minute(s)")
 		for {
 			time.Sleep(time.Minute * time.Duration(sqliteDbBackupFrequencyMinutes))
 			func() {
@@ -124,19 +127,24 @@ func StartServer() {
 	mux.HandleFunc("GET /api/event-items", webHandler.handleGetEventItems)
 
 	go func() {
-		log.Println("Listening on port 8080")
-		log.Fatal(http.ListenAndServe(":8080", mux))
+		fmt.Println("Listening on port 8080")
+		lerr := http.ListenAndServe(":8080", mux)
+		if lerr != nil {
+			fmt.Println("Error starting server:", lerr.Error())
+			os.Exit(1)
+		}
 	}()
 
 	// wait for signal to shutdown
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
-	log.Println("Server shutting down")
+	fmt.Println("Server shutting down")
 	dbClient.Lock()
 	dbClient.Backup()
 	err = dbClient.Shutdown()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
