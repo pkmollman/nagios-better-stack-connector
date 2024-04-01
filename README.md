@@ -10,8 +10,7 @@ When a Host/Service comes back up in Nagios, the corresponding incident in Bette
 
 ## Status
 
-**University of Oregon** Connector Status: <br>
-[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/10qx4.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+**University of Oregon** [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/10qx4.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 
 ## Configuration
 
