@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/pkmollman/nagios-better-stack-connector/betterstack"
 	"github.com/pkmollman/nagios-better-stack-connector/database"
@@ -45,6 +47,14 @@ func NewWebHandler(dbClient database.DatabaseClient, betterStackApi *betterstack
 func StartServer() {
 	// DB
 	sqliteDbPath := getEnvVarOrPanic("SQLITE_DB_PATH")
+	sqliteDbBackupDirPath := getEnvVarOrPanic("SQLITE_DB_BACKUP_DIR_PATH")
+	sqliteDbBackupFrequencyMinutesString := getEnvVarOrPanic("SQLITE_DB_BACKUP_FREQUENCY_MINUTES")
+
+	// convert string to int
+	sqliteDbBackupFrequencyMinutes, err := strconv.Atoi(sqliteDbBackupFrequencyMinutesString)
+	if err != nil {
+		log.Fatalf("unable to convert SQLITE_DB_BACKUP_FREQUENCY_MINUTES to int: %s", err)
+	}
 
 	// BetterStack
 	betterStackApiKey := getEnvVarOrPanic("BETTER_STACK_API_KEY")
@@ -60,7 +70,7 @@ func StartServer() {
 	var dbClient database.DatabaseClient
 
 	// should be able to swap this out for anything that implements the database.DatabaseClient interface
-	dbClient, err := sqlitedb.NewSQLiteClient(sqliteDbPath)
+	dbClient, err = sqlitedb.NewSQLiteClient(sqliteDbPath, sqliteDbBackupDirPath)
 	if err != nil {
 		log.Fatalf("unable to create database client: %s", err.Error())
 	}
@@ -69,6 +79,19 @@ func StartServer() {
 	if err != nil {
 		log.Fatalf("unable to initialize database client: %s", err.Error())
 	}
+
+	// start backup routine
+	go func() {
+		log.Println("Starting backup routine to backup every", sqliteDbBackupFrequencyMinutes, "minute(s)")
+		for {
+			time.Sleep(time.Minute * time.Duration(sqliteDbBackupFrequencyMinutes))
+			func() {
+				dbClient.Lock()
+				defer dbClient.Unlock()
+				dbClient.Backup()
+			}()
+		}
+	}()
 
 	// create betterstack client
 	betterStackClient := betterstack.NewBetterStackClient(betterStackApiKey, "https://uptime.betterstack.com")
@@ -81,15 +104,17 @@ func StartServer() {
 
 	mux := http.NewServeMux()
 
-	/// Handle Incoming Nagios Notifications
+	// Handle Incoming Nagios Notifications
 	mux.HandleFunc("POST /api/nagios-event", webHandler.handleIncomingNagiosNotification)
-	/// Handle Incoming Better Stack Webhooks
+
+	// Handle Incoming Better Stack Webhooks
 	mux.HandleFunc("POST /api/better-stack-event", webHandler.handleIncomingBetterStackWebhook)
-	/// Handle Health Check
+
+	// Handle Health Check
 	mux.HandleFunc("GET /api/health", webHandler.handleHealthRequest)
 
-	/// Handle get events
-	mux.HandleFunc("GET /api/nagios-event", webHandler.handleGetEvents)
+	// Handle get event items
+	mux.HandleFunc("GET /api/event-items", webHandler.handleGetEventItems)
 
 	go func() {
 		log.Println("Listening on port 8080")
@@ -101,6 +126,8 @@ func StartServer() {
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
 	log.Println("Server shutting down")
+	dbClient.Lock()
+	dbClient.Backup()
 	err = dbClient.Shutdown()
 	if err != nil {
 		log.Fatal(err)

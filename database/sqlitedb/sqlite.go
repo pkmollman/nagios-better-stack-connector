@@ -2,6 +2,7 @@ package sqlitedb
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/pkmollman/nagios-better-stack-connector/database"
 	"github.com/pkmollman/nagios-better-stack-connector/models"
@@ -9,19 +10,43 @@ import (
 )
 
 type SQLiteClient struct {
-	db         *sql.DB
-	serialChan chan struct{}
+	db              *sql.DB
+	serialChan      chan struct{}
+	backupDirectory string
 }
 
-func NewSQLiteClient(db_path string) (database.DatabaseClient, error) {
+func NewSQLiteClient(db_path, backup_directory string) (database.DatabaseClient, error) {
 	// sqlite
 	db, err := sql.Open("sqlite", db_path)
 	if err != nil {
 		return nil, err
 	}
-	return &SQLiteClient{
-		db: db,
-	}, nil
+
+	client := SQLiteClient{
+		db:              db,
+		backupDirectory: backup_directory,
+		serialChan:      make(chan struct{}, 1),
+	}
+
+	// go func() {
+	// 	for {
+	// 		time.Sleep(5 * time.Second)
+	// 		func() {
+	// 			client.Lock()
+	// 			client.db.Exec(`VACUUM INTO "backup.db"`)
+	// 			client.Unlock()
+	// 		}()
+	// 	}
+	// }()
+
+	return &client, nil
+}
+
+func (s *SQLiteClient) Backup() {
+	// generate timestamp
+	timestamp := time.Now().Format("2006-01-02-15-04-05")
+	filestring := s.backupDirectory + "/backup-" + timestamp + ".db"
+	s.db.Exec(`VACUUM INTO "` + filestring + `"`)
 }
 
 func (s *SQLiteClient) Lock() {
@@ -34,7 +59,6 @@ func (s *SQLiteClient) Unlock() {
 
 func (s *SQLiteClient) Init() error {
 	// only one operation at a time
-	s.serialChan = make(chan struct{}, 1)
 	s.Lock()
 	defer s.Unlock()
 	err := s.CreateEventItemTable()

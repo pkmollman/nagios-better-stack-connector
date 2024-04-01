@@ -14,4 +14,5 @@ type DatabaseClient interface {
 	Lock()
 	Unlock()
 	Shutdown() error
+	Backup()
 }

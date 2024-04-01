@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (wh *WebHandler) handleGetEvents(w http.ResponseWriter, r *http.Request) {
+func (wh *WebHandler) handleGetEventItems(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	wh.dbClient.Lock()
 	defer wh.dbClient.Unlock()
