@@ -127,7 +127,7 @@ define command {
 ## Monitoring
 
 The service exposes a health check endpoint at /api/health.
-It will respond with a 200 status code if the service is healthy, and a 500 status code if it is not.
+It will respond with a 200 status code if the service is healthy, and a 500 status code if it is not. The service updates the health status every minute.
 This can be used to easily monitor the connector from a BetterStack monitor.
 
 It will return plain text with a message describing the health status.
