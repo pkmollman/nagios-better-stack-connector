@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 func getEnvVarOrPanic(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		fmt.Println("%s environment variable could not be found", key)
+		fmt.Println("environment variable could not be found:", key)
 		os.Exit(1)
 	}
 
@@ -42,14 +43,20 @@ type WebHandler struct {
 	betterStackApi                 *betterstack.BetterStackClient
 	nagiosClient                   *nagios.NagiosClient
 	BetterStackDefaultContactEmail string
+	healthStatus                   nbscStatus
+	healthStatusMutex              sync.Mutex
 }
 
 func NewWebHandler(dbClient database.DatabaseClient, betterStackApi *betterstack.BetterStackClient, nagiosClient *nagios.NagiosClient) *WebHandler {
-	return &WebHandler{
+	handler := WebHandler{
 		dbClient:       dbClient,
 		betterStackApi: betterStackApi,
 		nagiosClient:   nagiosClient,
 	}
+
+	handler.startHealthRoutine()
+
+	return &handler
 }
 
 func StartServer() {
@@ -61,7 +68,7 @@ func StartServer() {
 	// convert string to int
 	sqliteDbBackupFrequencyMinutes, err := strconv.Atoi(sqliteDbBackupFrequencyMinutesString)
 	if err != nil {
-		fmt.Println("unable to convert SQLITE_DB_BACKUP_FREQUENCY_MINUTES to int: %s", err)
+		fmt.Println("unable to convert SQLITE_DB_BACKUP_FREQUENCY_MINUTES to int:", err)
 		os.Exit(1)
 	}
 
@@ -81,13 +88,13 @@ func StartServer() {
 	// should be able to swap this out for anything that implements the database.DatabaseClient interface
 	dbClient, err = sqlitedb.NewSQLiteClient(sqliteDbPath, sqliteDbBackupDirPath)
 	if err != nil {
-		fmt.Println("unable to create database client: %s", err.Error())
+		fmt.Println("unable to create database client:", err.Error())
 		os.Exit(1)
 	}
 
 	err = dbClient.Init()
 	if err != nil {
-		fmt.Println("unable to initialize database client: %s", err.Error())
+		fmt.Println("unable to initialize database client:", err.Error())
 		os.Exit(1)
 	}
 

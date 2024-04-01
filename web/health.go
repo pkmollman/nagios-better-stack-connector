@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"text/template"
+	"time"
 
 	"github.com/pkmollman/nagios-better-stack-connector/models"
 )
@@ -47,17 +48,20 @@ type nbscStatus struct {
 	BetterStack nbscServiceStatus
 }
 
-func (wh *WebHandler) handleHealthRequest(w http.ResponseWriter, r *http.Request) {
-	logRequest(r)
-	w.Header().Set("Content-Type", "text/plain")
+func (wh *WebHandler) startHealthRoutine() {
+	go func() {
+		for {
+			func() {
+				wh.healthStatusMutex.Lock()
+				defer wh.healthStatusMutex.Unlock()
+				wh.updateHealthStatus()
+			}()
+			time.Sleep(time.Second * 60)
+		}
+	}()
+}
 
-	connectorStatus := nbscStatus{
-		Database:    newNbscServiceStatus(),
-		Nagios:      newNbscServiceStatus(),
-		BetterStack: newNbscServiceStatus(),
-	}
-
-	const healthTextTemplate = `Database: {{.Database.State}}
+const healthTextTemplate = `Database: {{.Database.State}}
 {{- range .Database.CheckStates}}
 {{if .Succeeded}}  - SUCCESS: {{else}}  - FAILURE: {{end}}{{.Message}}
 {{- end}}
@@ -72,6 +76,13 @@ BetterStack: {{.BetterStack.State}}
 {{if .Succeeded}}  - SUCCESS: {{else}}  - FAILURE: {{end}}{{.Message}}
 {{- end}}
 `
+
+func (wh *WebHandler) updateHealthStatus() {
+	connectorStatus := nbscStatus{
+		Database:    newNbscServiceStatus(),
+		Nagios:      newNbscServiceStatus(),
+		BetterStack: newNbscServiceStatus(),
+	}
 
 	// check database
 	wh.dbClient.Lock()
@@ -153,6 +164,13 @@ BetterStack: {{.BetterStack.State}}
 		connectorStatus.BetterStack.NewSuccess("BetterStack incidents endpoint returned status 200")
 	}
 
+	wh.healthStatus = connectorStatus
+}
+
+func (wh *WebHandler) handleHealthRequest(w http.ResponseWriter, r *http.Request) {
+	logRequest(r)
+	w.Header().Set("Content-Type", "text/plain")
+
 	health := HEALTHY
 
 	format_template, err := template.New("status").Parse(healthTextTemplate)
@@ -163,9 +181,12 @@ BetterStack: {{.BetterStack.State}}
 		return
 	}
 
-	if connectorStatus.Database.State == UNHEALTHY ||
-		connectorStatus.Nagios.State == UNHEALTHY ||
-		connectorStatus.BetterStack.State == UNHEALTHY {
+	wh.healthStatusMutex.Lock()
+	defer wh.healthStatusMutex.Unlock()
+
+	if wh.healthStatus.Database.State == UNHEALTHY ||
+		wh.healthStatus.Nagios.State == UNHEALTHY ||
+		wh.healthStatus.BetterStack.State == UNHEALTHY {
 		health = UNHEALTHY
 	}
 
@@ -175,7 +196,7 @@ BetterStack: {{.BetterStack.State}}
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	err = format_template.Execute(w, connectorStatus)
+	err = format_template.Execute(w, wh.healthStatus)
 	if err != nil {
 		log.Println("ERROR Failed to write health status template: " + err.Error())
 	}
