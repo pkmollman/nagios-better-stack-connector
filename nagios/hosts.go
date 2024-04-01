@@ -29,8 +29,9 @@ func (n *NagiosClient) GetHosts() ([]HostState, error) {
 	}
 	defer res.Body.Close()
 
-	// bodyBytes, err := io.ReadAll(res.Body)
-	// println(string(bodyBytes))
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Nagios returned status code %d instead of %d", res.StatusCode, http.StatusOK)
+	}
 
 	hosts := []HostState{}
 	err = json.NewDecoder(res.Body).Decode(&hosts)
@@ -53,6 +54,10 @@ func (n *NagiosClient) GetHostState(host string) (HostState, error) {
 		return HostState{}, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return HostState{}, fmt.Errorf("Nagios returned status code %d instead of %d", res.StatusCode, http.StatusOK)
+	}
 
 	// print body
 	// bodyBytes, err := io.ReadAll(res.Body)

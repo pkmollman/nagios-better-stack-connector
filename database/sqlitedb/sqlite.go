@@ -72,7 +72,7 @@ func (s *SQLiteClient) CreateEventItemTable() error {
 	return nil
 }
 
-func (s *SQLiteClient) CreateEventItem(item models.EventItem) error {
+func (s *SQLiteClient) CreateEventItem(item models.EventItem) (int64, error) {
 	// insert into database
 	insetStmt, err := s.db.Prepare(`
 	INSERT INTO events (
@@ -87,9 +87,9 @@ func (s *SQLiteClient) CreateEventItem(item models.EventItem) error {
 		betterStackIncidentId )
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = insetStmt.Exec(
+	result, err := insetStmt.Exec(
 		item.NagiosSiteName,
 		item.NagiosProblemId,
 		item.NagiosProblemType,
@@ -101,9 +101,35 @@ func (s *SQLiteClient) CreateEventItem(item models.EventItem) error {
 		item.BetterStackIncidentId,
 	)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
+func (s *SQLiteClient) DeleteEventItem(id int64) (int64, error) {
+	stmt, err := s.db.Prepare("DELETE FROM events WHERE id = ?")
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(id)
+	if err != nil {
+		return 0, err
+	}
+
+	rowsEffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return rowsEffected, nil
 }
 
 func (s *SQLiteClient) GetAllEventItems() ([]models.EventItem, error) {
