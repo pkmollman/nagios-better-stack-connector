@@ -9,7 +9,9 @@ import (
 )
 
 type ServiceState struct {
-	DisplayName  string `json:"display_name"`
+	DisplayName string `json:"display_name"`
+	// this is the real service name, for querying the api
+	ServiceDesc  string `json:"service_description"`
 	Acknowledged int    `json:"acknowledged"`
 	State        int    `json:"state"`
 	CheckOutput  string `json:"plugin_output"`

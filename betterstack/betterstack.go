@@ -144,7 +144,7 @@ func (b *BetterStackClient) AcknowledgeIncident(contact_email, default_contact_e
 func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email, incidentId string) error {
 	// create it
 	var betterStackAck struct {
-		ResolvedBy string `json:"resolved_by,omitempty"`
+		ResolvedBy string `json:"resolved_by"`
 	}
 
 	betterStackAck.ResolvedBy = contact_email
