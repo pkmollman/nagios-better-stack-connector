@@ -157,8 +157,10 @@ Database: HEALTHY
   - SUCCESS: Successfully created event item in database
   - SUCCESS: Successfully attempted to delete event item in database
   - SUCCESS: Successfully deleted event item in database
+
 Nagios: UNHEALTHY
   - FAILURE: Failed to get hosts from Nagios: Nagios returned status code 503 instead of 200
+
 BetterStack: HEALTHY
   - SUCCESS: BetterStack incidents endpoint returned status 200
 ```
