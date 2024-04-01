@@ -59,7 +59,7 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 		event.NagiosProblemType = "HOST"
 	}
 
-	log.Println("INFO Incoming notification: " + incidentName + " problemId " + event.Id)
+	log.Println("INFO Incoming notification: " + incidentName + " nagiosProblemId " + event.NagiosProblemId)
 
 	// handle creating indicents for new problems, and acking/resolving existing problems
 	switch event.NagiosProblemNotificationType {
@@ -116,9 +116,9 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
 				ackerr := wh.betterStackApi.AcknowledgeIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
-					log.Println("WARN Failed to acknowledge incident: " + incidentName + " " + ackerr.Error())
+					log.Println("WARN Failed to acknowledge incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {
-					log.Println("INFO Acknowledged incident: " + incidentName + " " + item.BetterStackIncidentId)
+					log.Println("INFO Acknowledged incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
 				}
 			}
 		}
@@ -138,9 +138,9 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
 				ackerr := wh.betterStackApi.ResolveIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
-					log.Println("WARN Failed to resolve incident: " + incidentName + " " + ackerr.Error())
+					log.Println("WARN Failed to resolve incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {
-					log.Println("INFO Resolved incident: " + incidentName + " " + item.BetterStackIncidentId)
+					log.Println("INFO Resolved incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
 				}
 			}
 		}
