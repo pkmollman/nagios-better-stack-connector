@@ -46,7 +46,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, incidentName, incidentCause, alertId string) (string, error) {
 	// create it
 	var betterStackIncident struct {
-		RequesterEmail     string `json:"requester_email,omitempty"`
+		RequesterEmail     string `json:"requester_email"`
 		IncidentName       string `json:"name"`
 		Summary            string `json:"summary"`
 		Description        string `json:"description"`
@@ -58,7 +58,7 @@ func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, inc
 		EscalationPolicyId string `json:"policy_id"`
 	}
 
-	betterStackIncident.RequesterEmail = "Nagios BetterStack Connector"
+	betterStackIncident.RequesterEmail = ""
 	betterStackIncident.IncidentName = incidentName
 	betterStackIncident.Summary = incidentCause
 	betterStackIncident.Description = incidentCause
