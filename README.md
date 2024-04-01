@@ -10,6 +10,15 @@ When a Host/Service comes back up in Nagios, the corresponding incident in Bette
 
 ## Configuration
 
+_Table of Contents_
+
+- [Systemd](#systemd)
+- [Database](#database)
+- [Better Stack](#betterstack)
+- [Nagios](#nagios)
+
+### Systemd
+
 Your systemd unit file should look something like this:
 
 ```
@@ -40,7 +49,7 @@ NAGIOS_THRUK_API_KEY=12345asdfg
 NAGIOS_THRUK_BASE_URL=https://some-nagios-server.acme.com
 NAGIOS_THRUK_SITE_NAME=some-nagios-site
 
-#SQLITE
+# SQLITE
 SQLITE_DB_PATH=/opt/nbsc/events.db
 SQLITE_DB_BACKUP_DIR_PATH=/opt/nbsc/backups
 SQLITE_DB_BACKUP_FREQUENCY_MINUTES=60
@@ -64,7 +73,7 @@ SQLITE_DB_BACKUP_DIR_PATH=/opt/nbsc/backups
 SQLITE_DB_BACKUP_FREQUENCY_MINUTES=60
 ```
 
-### Better Stack
+### BetterStack
 
 Generate an API key for the connector service, and provide it in the connector service environment variables, along with a default contact to label incident interactions with, like so:
 
@@ -104,10 +113,8 @@ Make your notification commands provided nbsc-client.py. It uses python3 with re
 The notification command should look something like this:
 
 ```
-command_name    notify-by-betterstack
-command_line    /usr/bin/python3 $USER2$/nbsc-client.py --url 'https://is-nagios-bsc-p.uoregon.edu/api/nagios-event' --site-name 'some-site' --problem-id '$SERVICEPROBLEMID$' --problem-content '$SERVICEOUTPUT$' --service-name '$SERVICEDESC$' --host-name '$HOSTNAME$' --notification-type '$NOTIFICATIONTYPE$' --policy-id '12345' --interacting-user '$SERVICEACKAUTHOR$'
+define command {
+  command_name    notify-by-betterstack
+  command_line    /usr/bin/python3 $USER2$/nbsc-client.py --url 'https://is-nagios-bsc-p.uoregon.edu/api/nagios-event' --site-name 'some-site' --problem-id '$SERVICEPROBLEMID$' --problem-content '$SERVICEOUTPUT$' --service-name '$SERVICEDESC$' --host-name '$HOSTNAME$' --notification-type '$NOTIFICATIONTYPE$' --policy-id '12345' --interacting-user '$SERVICEACKAUTHOR$'
+}
 ```
-
-### Connector Service
-
-Provide the following environment variables to the process running the connector service.
