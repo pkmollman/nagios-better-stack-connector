@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -37,7 +36,7 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 		event.NagiosProblemHostname == "" ||
 		event.BetterStackPolicyId == "" {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
-		log.Println("INFO Missing required fields, ignoring: " + bodyString)
+		fmt.Println("INFO Missing required fields, ignoring: " + bodyString)
 		return
 	}
 
@@ -59,7 +58,7 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 		event.NagiosProblemType = "HOST"
 	}
 
-	log.Println("INFO Incoming notification: " + incidentName + " nagiosProblemId " + event.NagiosProblemId)
+	fmt.Println("INFO Incoming notification: " + incidentName + " nagiosProblemId " + event.NagiosProblemId)
 
 	// handle creating indicents for new problems, and acking/resolving existing problems
 	switch event.NagiosProblemNotificationType {
@@ -80,16 +79,16 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.NagiosProblemType == event.NagiosProblemType &&
 				item.NagiosSiteName == event.NagiosSiteName &&
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
-				log.Println("INFO Ignoring superfluous nagios notification for incident: \"" + incidentName + "\"")
+				fmt.Println("INFO Ignoring superfluous nagios notification for incident: \"" + incidentName + "\"")
 				w.WriteHeader(http.StatusOK)
 				return
 			}
 		}
 
-		log.Println("INFO Creating incident: " + incidentName)
+		fmt.Println("INFO Creating incident: " + incidentName)
 		betterStackIncidentId, err := wh.betterStackApi.CreateIncident(event.BetterStackPolicyId, wh.BetterStackDefaultContactEmail, incidentName, event.NagiosProblemContent, event.Id)
 		if err != nil {
-			log.Println("ERROR Failed to create incident: " + incidentName + " " + err.Error())
+			fmt.Println("ERROR Failed to create incident: " + incidentName + " " + err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -98,12 +97,12 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 
 		_, err = wh.dbClient.CreateEventItem(event)
 		if err != nil {
-			log.Println("ERROR Failed to create event item: " + incidentName + " " + err.Error())
+			fmt.Println("ERROR Failed to create event item: " + incidentName + " " + err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		log.Println("INFO Created incident: " + incidentName)
+		fmt.Println("INFO Created incident: " + incidentName)
 	case "ACKNOWLEDGEMENT":
 		items, _ := wh.dbClient.GetAllEventItems()
 
@@ -116,16 +115,16 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
 				ackerr := wh.betterStackApi.AcknowledgeIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
-					log.Println("WARN Failed to acknowledge incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
+					fmt.Println("WARN Failed to acknowledge incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {
-					log.Println("INFO Acknowledged incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
+					fmt.Println("INFO Acknowledged incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
 				}
 			}
 		}
 	case "RECOVERY":
 		items, err := wh.dbClient.GetAllEventItems()
 		if err != nil {
-			log.Println("ERROR Failed to get all event items: " + err.Error())
+			fmt.Println("ERROR Failed to get all event items: " + err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -138,15 +137,15 @@ func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
 				ackerr := wh.betterStackApi.ResolveIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
-					log.Println("WARN Failed to resolve incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
+					fmt.Println("WARN Failed to resolve incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {
-					log.Println("INFO Resolved incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
+					fmt.Println("INFO Resolved incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
 				}
 			}
 		}
 	default:
 		// ignore it
-		log.Println("INFO Ignoring incoming notification: " + incidentName + " STATUS " + event.NagiosProblemNotificationType)
+		fmt.Println("INFO Ignoring incoming notification: " + incidentName + " STATUS " + event.NagiosProblemNotificationType)
 	}
 
 	// return success
