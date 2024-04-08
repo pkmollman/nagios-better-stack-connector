@@ -6,9 +6,6 @@ import (
 	"os"
 )
 
-
-
-
 func getEnvVarOrPanic(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
@@ -19,6 +16,7 @@ func getEnvVarOrPanic(key string) string {
 	return value
 }
 
+// Log http request in a friendly format
 func logRequest(r *http.Request) {
 	remoteAddr := r.RemoteAddr
 

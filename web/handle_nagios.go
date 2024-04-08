@@ -14,7 +14,7 @@ import (
 func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	wh.dbClient.Lock()
-	wh.dbClient.Unlock()
+	defer wh.dbClient.Unlock()
 	var event models.EventItem
 
 	// body to string

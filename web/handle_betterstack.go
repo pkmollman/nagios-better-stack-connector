@@ -22,6 +22,9 @@ func (wh *webHandler) handleIncomingBetterStackWebhook(w http.ResponseWriter, r 
 
 	// ack nagios services/host problems based off incident ID, only act on acknowledged and resolved events
 	if event.Data.Attributes.Status == "acknowledged" || event.Data.Attributes.Status == "resolved" {
+		wh.dbClient.Lock()
+		defer wh.dbClient.Unlock()
+
 		var eventData models.EventItem
 
 		items, err := wh.dbClient.GetAllEventItems()

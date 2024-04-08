@@ -99,6 +99,7 @@ func StartServer() {
 	webHandler := NewWebHandler(dbClient, betterStackClient, nagiosClient)
 	webHandler.BetterStackDefaultContactEmail = betterDefaultContactEmail
 
+	// create HTTP router
 	mux := http.NewServeMux()
 
 	// Handle Incoming Nagios Notifications
@@ -114,12 +115,12 @@ func StartServer() {
 	mux.HandleFunc("GET /api/event-items", webHandler.handleGetEventItems)
 
 	// HTTP server
-
 	httpServer := &http.Server{
 		Addr:    ":8080",
 		Handler: mux,
 	}
 
+	// run it in a goroutine so we can gracefully shutdown later
 	go func() {
 		fmt.Println("Listening on port 8080")
 		lerr := httpServer.ListenAndServe()
@@ -135,12 +136,15 @@ func StartServer() {
 	<-signals
 	fmt.Println("Server shutting down")
 
+	// shutdown HTTP server
 	httpShutdownContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	herr := httpServer.Shutdown(httpShutdownContext)
 	if herr != nil {
 		fmt.Println("Error gracefully shutting down http server:", herr.Error())
 	}
+
+	// Wait for exclusive access to the database to backups and shutdown
 	dbClient.Lock()
 	dbClient.Backup()
 	err = dbClient.Shutdown()
