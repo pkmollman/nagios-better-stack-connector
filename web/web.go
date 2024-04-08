@@ -19,18 +19,18 @@ import (
 
 type webHandler struct {
 	dbClient                       database.DatabaseClient
-	betterStackApi                 *betterstack.BetterStackClient
+	betterClient                   *betterstack.BetterStackClient
 	nagiosClient                   *nagios.NagiosClient
 	BetterStackDefaultContactEmail string
 	healthStatus                   nbscStatus
 	healthStatusMutex              sync.Mutex
 }
 
-func NewWebHandler(dbClient database.DatabaseClient, betterStackApi *betterstack.BetterStackClient, nagiosClient *nagios.NagiosClient) *webHandler {
+func NewWebHandler(dbClient database.DatabaseClient, betterStackClient *betterstack.BetterStackClient, nagiosClient *nagios.NagiosClient) *webHandler {
 	handler := webHandler{
-		dbClient:       dbClient,
-		betterStackApi: betterStackApi,
-		nagiosClient:   nagiosClient,
+		dbClient:     dbClient,
+		betterClient: betterStackClient,
+		nagiosClient: nagiosClient,
 	}
 
 	handler.startHealthRoutine()

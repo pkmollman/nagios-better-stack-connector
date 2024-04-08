@@ -86,7 +86,7 @@ func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 		}
 
 		fmt.Println("INFO Creating incident: " + incidentName)
-		betterStackIncidentId, err := wh.betterStackApi.CreateIncident(event.BetterStackPolicyId, wh.BetterStackDefaultContactEmail, incidentName, event.NagiosProblemContent, event.Id)
+		betterStackIncidentId, err := wh.betterClient.CreateIncident(event.BetterStackPolicyId, wh.BetterStackDefaultContactEmail, incidentName, event.NagiosProblemContent, event.Id)
 		if err != nil {
 			fmt.Println("ERROR Failed to create incident: " + incidentName + " " + err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -113,7 +113,7 @@ func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.NagiosProblemServiceName == event.NagiosProblemServiceName &&
 				item.NagiosProblemType == event.NagiosProblemType &&
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
-				ackerr := wh.betterStackApi.AcknowledgeIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
+				ackerr := wh.betterClient.AcknowledgeIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
 					fmt.Println("WARN Failed to acknowledge incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {
@@ -135,7 +135,7 @@ func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				item.NagiosProblemHostname == event.NagiosProblemHostname &&
 				item.NagiosProblemServiceName == event.NagiosProblemServiceName &&
 				item.BetterStackPolicyId == event.BetterStackPolicyId {
-				ackerr := wh.betterStackApi.ResolveIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
+				ackerr := wh.betterClient.ResolveIncident(event.InteractingUserEmail, wh.BetterStackDefaultContactEmail, item.BetterStackIncidentId)
 				if ackerr != nil {
 					fmt.Println("WARN Failed to resolve incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {

@@ -157,7 +157,7 @@ func (wh *webHandler) updateHealthStatus() {
 	}
 
 	// check betterstack
-	err = wh.betterStackApi.CheckIncidentsEndpoint()
+	err = wh.betterClient.CheckIncidentsEndpoint()
 	if err != nil {
 		connectorStatus.BetterStack.NewFailure("Failed to check BetterStack incidents endpoint: " + err.Error())
 	} else {
