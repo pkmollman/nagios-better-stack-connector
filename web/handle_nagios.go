@@ -11,7 +11,7 @@ import (
 	"github.com/pkmollman/nagios-better-stack-connector/models"
 )
 
-func (wh *WebHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r *http.Request) {
+func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	wh.dbClient.Lock()
 	wh.dbClient.Unlock()

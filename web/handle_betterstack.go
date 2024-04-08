@@ -9,7 +9,7 @@ import (
 	"github.com/pkmollman/nagios-better-stack-connector/models"
 )
 
-func (wh *WebHandler) handleIncomingBetterStackWebhook(w http.ResponseWriter, r *http.Request) {
+func (wh *webHandler) handleIncomingBetterStackWebhook(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	var event betterstack.BetterStackIncidentWebhookPayload
 

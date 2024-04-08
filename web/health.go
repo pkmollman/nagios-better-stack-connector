@@ -48,7 +48,7 @@ type nbscStatus struct {
 	BetterStack nbscServiceStatus
 }
 
-func (wh *WebHandler) startHealthRoutine() {
+func (wh *webHandler) startHealthRoutine() {
 	go func() {
 		for {
 			func() {
@@ -77,7 +77,7 @@ BetterStack: {{.BetterStack.State}}
 {{- end}}
 `
 
-func (wh *WebHandler) updateHealthStatus() {
+func (wh *webHandler) updateHealthStatus() {
 	connectorStatus := nbscStatus{
 		Database:    newNbscServiceStatus(),
 		Nagios:      newNbscServiceStatus(),
@@ -167,7 +167,7 @@ func (wh *WebHandler) updateHealthStatus() {
 	wh.healthStatus = connectorStatus
 }
 
-func (wh *WebHandler) handleHealthRequest(w http.ResponseWriter, r *http.Request) {
+func (wh *webHandler) handleHealthRequest(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
 	w.Header().Set("Content-Type", "text/plain")
 
