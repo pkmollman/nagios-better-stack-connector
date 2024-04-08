@@ -39,10 +39,6 @@ func (n *NagiosClient) GetServiceState(host, service string) (ServiceState, erro
 		return ServiceState{}, fmt.Errorf("Nagios returned status code %d instead of %d", res.StatusCode, http.StatusOK)
 	}
 
-	// bodyBytes, err := io.ReadAll(res.Body)
-	// println(string(bodyBytes))
-	//
-
 	var serviceStateResponse []ServiceState
 	err = json.NewDecoder(res.Body).Decode(&serviceStateResponse)
 	if err != nil {
@@ -74,10 +70,11 @@ func (n *NagiosClient) AckService(host, service, comment string) error {
 		return err
 	}
 
-	_, err = http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
+	res.Body.Close()
 
 	return nil
 }

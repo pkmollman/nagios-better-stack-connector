@@ -44,7 +44,6 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 }
 
 func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, incidentName, incidentCause, alertId string) (string, error) {
-	// create it
 	var betterStackIncident struct {
 		RequesterEmail     string `json:"requester_email"`
 		IncidentName       string `json:"name"`
@@ -64,7 +63,6 @@ func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, inc
 	betterStackIncident.Description = incidentCause
 	betterStackIncident.EscalationPolicyId = escalation_policy
 
-	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackIncident)
 	if err != nil {
 		return "", err
@@ -81,9 +79,6 @@ func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, inc
 
 	// check response
 	if res.StatusCode != 201 {
-		// print the response body
-		body, _ := io.ReadAll(res.Body)
-		fmt.Println(string(body))
 		return "", fmt.Errorf("response status code was %d", res.StatusCode)
 	}
 
@@ -114,7 +109,6 @@ func (b *BetterStackClient) AcknowledgeIncident(contact_email, default_contact_e
 		betterStackAck.AckedBy = default_contact_email
 	}
 
-	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
 	if err != nil {
 		return err
@@ -131,9 +125,6 @@ func (b *BetterStackClient) AcknowledgeIncident(contact_email, default_contact_e
 
 	// check response
 	if res.StatusCode != 409 && res.StatusCode != 200 {
-		// print the response body
-		// body, _ := io.ReadAll(res.Body)
-		// fmt.Println(string(body))
 		return fmt.Errorf("response status code was %d", res.StatusCode)
 	}
 
@@ -153,7 +144,6 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 		betterStackAck.ResolvedBy = default_contact_email
 	}
 
-	// marshal struct to json to reader
 	jsonBody, err := json.Marshal(betterStackAck)
 	if err != nil {
 		return err
@@ -170,9 +160,6 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 
 	// check response
 	if res.StatusCode != 409 && res.StatusCode != 200 {
-		// print the response body
-		// body, _ := io.ReadAll(res.Body)
-		// fmt.Println(string(body))
 		return fmt.Errorf("response status code was %d", res.StatusCode)
 	}
 

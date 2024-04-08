@@ -59,10 +59,6 @@ func (n *NagiosClient) GetHostState(host string) (HostState, error) {
 		return HostState{}, fmt.Errorf("Nagios returned status code %d instead of %d", res.StatusCode, http.StatusOK)
 	}
 
-	// print body
-	// bodyBytes, err := io.ReadAll(res.Body)
-	// println(string(bodyBytes))
-
 	var hostStateResponse []HostState
 	err = json.NewDecoder(res.Body).Decode(&hostStateResponse)
 	if err != nil {
@@ -93,10 +89,11 @@ func (n *NagiosClient) AckHost(host, comment string) error {
 		return err
 	}
 
-	_, err = http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
+	res.Body.Close()
 
 	return nil
 }
