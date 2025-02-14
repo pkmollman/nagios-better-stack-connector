@@ -199,7 +199,6 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 	if err != nil {
 		return err
 	}
-	fmt.Println(res, err)
 	defer res.Body.Close()
 
 	// check response
