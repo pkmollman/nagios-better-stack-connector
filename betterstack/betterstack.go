@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -47,7 +48,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 	return req, nil
 }
 
-func (b *BetterStackClient) Do(req *http.Request) (*http.Response, error) {
+func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (*http.Response, error) {
 	request_success := false
 	wait_time_seconds := 0
 	retries := 0
@@ -59,7 +60,7 @@ func (b *BetterStackClient) Do(req *http.Request) (*http.Response, error) {
 		}
 		if wait_time_seconds > 0 {
 			retries++
-			fmt.Println("Got 429 waiting for", wait_time_seconds, "seconds.")
+			fmt.Println(fmt.Sprintf("Got unexpected status code %d waiting for %d seconds.", res.StatusCode, wait_time_seconds))
 			time.Sleep(time.Duration(wait_time_seconds) * time.Second)
 		}
 		var err error
@@ -68,7 +69,7 @@ func (b *BetterStackClient) Do(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 
-		if res.StatusCode == 429 {
+		if slices.Contains(expected_status_codes[:], res.StatusCode) {
 			retry_after := res.Header.Get("Retry-After")
 			if retry_after != "" {
 				wait_time, perr := strconv.Atoi(retry_after)
@@ -113,7 +114,7 @@ func (b *BetterStackClient) CreateIncident(escalation_policy, contact_email, inc
 
 	req, err := b.NewRequest("POST", "/api/v2/incidents", jsonBodyReader)
 
-	res, err := b.Do(req)
+	res, err := b.Do(req, []int{201})
 	if err != nil {
 		return "", err
 	}
@@ -159,7 +160,7 @@ func (b *BetterStackClient) AcknowledgeIncident(contact_email, default_contact_e
 
 	req, err := b.NewRequest("POST", "/api/v2/incidents/"+incidentId+"/acknowledge", jsonBodyReader)
 
-	res, err := b.Do(req)
+	res, err := b.Do(req, []int{409, 200})
 	if err != nil {
 		return err
 	}
@@ -194,7 +195,7 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 
 	req, err := b.NewRequest("POST", "/api/v2/incidents/"+incidentId+"/resolve", jsonBodyReader)
 
-	res, err := b.Do(req)
+	res, err := b.Do(req, []int{409, 200})
 	if err != nil {
 		return err
 	}
@@ -213,7 +214,7 @@ func (b *BetterStackClient) ResolveIncident(contact_email, default_contact_email
 func (b *BetterStackClient) CheckIncidentsEndpoint() error {
 	req, err := b.NewRequest("GET", "/api/v2/incidents", nil)
 
-	res, err := b.Do(req)
+	res, err := b.Do(req, []int{200})
 	fmt.Println(res, err)
 	if err != nil {
 		return fmt.Errorf("Failed to request /api/v2/incidents: %s", err.Error())
@@ -230,7 +231,7 @@ func (b *BetterStackClient) CheckIncidentsEndpoint() error {
 func (b *BetterStackClient) TestGetIncident() error {
 	req, err := b.NewRequest("GET", "/api/v2/incidents/697108568", nil)
 
-	res, err := b.Do(req)
+	res, err := b.Do(req, []int{200})
 	fmt.Println(res, err)
 	if err != nil {
 		return fmt.Errorf("Failed to request /api/v2/incidents: %s", err.Error())
