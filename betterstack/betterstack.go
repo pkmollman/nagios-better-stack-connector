@@ -214,7 +214,6 @@ func (b *BetterStackClient) CheckIncidentsEndpoint() error {
 	req, err := b.NewRequest("GET", "/api/v2/incidents", nil)
 
 	res, err := b.Do(req, []int{200})
-	fmt.Println(res, err)
 	if err != nil {
 		return fmt.Errorf("Failed to request /api/v2/incidents: %s", err.Error())
 	}
@@ -231,7 +230,6 @@ func (b *BetterStackClient) TestGetIncident() error {
 	req, err := b.NewRequest("GET", "/api/v2/incidents/697108568", nil)
 
 	res, err := b.Do(req, []int{200})
-	fmt.Println(res, err)
 	if err != nil {
 		return fmt.Errorf("Failed to request /api/v2/incidents: %s", err.Error())
 	}
