@@ -69,7 +69,7 @@ func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (
 			return nil, err
 		}
 
-		if slices.Contains(expected_status_codes[:], res.StatusCode) {
+		if !slices.Contains(expected_status_codes[:], res.StatusCode) {
 			retry_after := res.Header.Get("Retry-After")
 			if retry_after != "" {
 				wait_time, perr := strconv.Atoi(retry_after)
