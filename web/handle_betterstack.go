@@ -40,7 +40,7 @@ func (wh *webHandler) handleIncomingBetterStackWebhook(w http.ResponseWriter, r 
 			}
 		}
 
-		if eventData.Id == "" {
+		if eventData.BetterStackIncidentId == "" {
 			log.Println("ERROR Could not find event for betterstack incident id: " + event.Data.Id)
 			http.Error(w, "Could not find event", http.StatusBadRequest)
 			return

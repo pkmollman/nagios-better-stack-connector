@@ -1,7 +1,7 @@
 package models
 
 type EventItem struct {
-	Id                              string `json:"id"`
+	Id                              int64  `json:"id"`
 	NagiosSiteName                  string `json:"nagiosSiteName"`
 	NagiosProblemId                 string `json:"nagiosProblemId"`
 	NagiosProblemType               string `json:"nagiosProblemType"`

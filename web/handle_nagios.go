@@ -86,7 +86,7 @@ func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 		}
 
 		fmt.Println("INFO Creating incident: " + incidentName)
-		betterStackIncidentId, err := wh.betterClient.CreateIncident(event.BetterStackPolicyId, wh.BetterStackDefaultContactEmail, incidentName, event.NagiosProblemContent, event.Id)
+		betterStackIncidentId, err := wh.betterClient.CreateIncident(event.BetterStackPolicyId, wh.BetterStackDefaultContactEmail, incidentName, event.NagiosProblemContent)
 		if err != nil {
 			fmt.Println("ERROR Failed to create incident: " + incidentName + " " + err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -140,6 +140,10 @@ func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 					fmt.Println("WARN Failed to resolve incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId + " " + ackerr.Error())
 				} else {
 					fmt.Println("INFO Resolved incident: " + incidentName + " BetterStack incident ID " + item.BetterStackIncidentId)
+				}
+				_, delerr := wh.dbClient.DeleteEventItem(item.Id)
+				if delerr != nil {
+					fmt.Println(fmt.Sprintf("ERROR Failed to delete event item: %s ID %d %s", incidentName, item.Id, delerr.Error()))
 				}
 			}
 		}

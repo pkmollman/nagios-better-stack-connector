@@ -8,6 +8,10 @@ Acking an incident in Nagios will update the Better Stack incident and vice vers
 
 When a Host/Service comes back up in Nagios, the corresponding incident in Better Stack is resolved.
 
+## TODO
+- [ ] Make queue
+- [ ] Cleanup old events
+
 ## Status
 
 **University of Oregon** [![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/10qx4.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
