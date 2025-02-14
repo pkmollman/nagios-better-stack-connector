@@ -144,6 +144,8 @@ func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r 
 				_, delerr := wh.dbClient.DeleteEventItem(item.Id)
 				if delerr != nil {
 					fmt.Println(fmt.Sprintf("ERROR Failed to delete event item: %s ID %d %s", incidentName, item.Id, delerr.Error()))
+				} else {
+					fmt.Println(fmt.Sprintf("INFO Deleted event item: %s ID %d", incidentName, item.Id))
 				}
 			}
 		}
