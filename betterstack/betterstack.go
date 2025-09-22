@@ -50,7 +50,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 
 func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (*http.Response, error) {
 	request_success := false
-	wait_time_seconds := 0
+	wait_time_seconds := 5
 	initial_try := true
 	retries := 0
 	var res *http.Response
