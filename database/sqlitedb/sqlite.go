@@ -41,15 +41,15 @@ func (s *SQLiteClient) Backup() {
 }
 
 func (s *SQLiteClient) Lock() {
-	fmt.Println("DB LOCK")
-	fmt.Println(string(debug.Stack()))
 	s.serialChan <- struct{}{}
+	fmt.Println("GOT DB LOCK")
+	fmt.Println(string(debug.Stack()))
 }
 
 func (s *SQLiteClient) Unlock() {
-	fmt.Println("DB UNLOCK")
-	fmt.Println(string(debug.Stack()))
 	<-s.serialChan
+	fmt.Println("DB UNLOCKED")
+	fmt.Println(string(debug.Stack()))
 }
 
 func (s *SQLiteClient) Init() error {

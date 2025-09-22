@@ -88,6 +88,7 @@ func (wh *webHandler) updateHealthStatus() {
 	wh.dbClient.Lock()
 	defer wh.dbClient.Unlock()
 	_, err := wh.dbClient.GetAllEventItems()
+	fmt.Println("got event items")
 	if err != nil {
 		connectorStatus.Database.NewFailure("Failed to get event items from database: " + err.Error())
 	} else {
@@ -95,6 +96,7 @@ func (wh *webHandler) updateHealthStatus() {
 	}
 
 	newId, err := wh.dbClient.CreateEventItem(models.EventItem{})
+	fmt.Println("creted event item")
 	if err != nil {
 		connectorStatus.Database.NewFailure("Failed to create event item in database: " + err.Error())
 	} else {
@@ -102,6 +104,7 @@ func (wh *webHandler) updateHealthStatus() {
 	}
 
 	rowsEffected, err := wh.dbClient.DeleteEventItem(newId)
+	fmt.Println("deleted event item")
 	if err != nil {
 		connectorStatus.Database.NewFailure("Failed to delete event item in database: " + err.Error())
 	} else {
@@ -116,6 +119,7 @@ func (wh *webHandler) updateHealthStatus() {
 
 	// check nagios
 	hosts, err := wh.nagiosClient.GetHosts()
+	fmt.Println("got nagios hosts")
 	if err != nil {
 		connectorStatus.Nagios.NewFailure("Failed to get hosts from Nagios: " + err.Error())
 	} else {
@@ -127,10 +131,11 @@ func (wh *webHandler) updateHealthStatus() {
 		host := hosts[rand.Intn(len(hosts))]
 
 		for len(host.Services) == 0 {
+			fmt.Println("pat is idiot")
 			host = hosts[rand.Intn(len(hosts))]
 		}
 
-		// get random sercice name
+		// get random service name
 		serviceName := host.Services[rand.Intn(len(host.Services))]
 
 		// check service
@@ -164,6 +169,7 @@ func (wh *webHandler) updateHealthStatus() {
 	}
 
 	wh.healthStatus = connectorStatus
+	fmt.Println("updated health status")
 }
 
 func (wh *webHandler) handleHealthRequest(w http.ResponseWriter, r *http.Request) {
