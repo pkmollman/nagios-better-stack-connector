@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -23,9 +22,7 @@ func (wh *webHandler) handleIncomingBetterStackWebhook(w http.ResponseWriter, r 
 
 	// ack nagios services/host problems based off incident ID, only act on acknowledged and resolved events
 	if event.Data.Attributes.Status == "acknowledged" || event.Data.Attributes.Status == "resolved" {
-		fmt.Println("Before trying to lock DB in BS handler")
 		wh.dbClient.Lock()
-		fmt.Println("Got lock DB in BS handler")
 		defer wh.dbClient.Unlock()
 
 		var eventData models.EventItem

@@ -2,8 +2,6 @@ package sqlitedb
 
 import (
 	"database/sql"
-	"fmt"
-	"runtime/debug"
 	"time"
 
 	"github.com/pkmollman/nagios-better-stack-connector/database"
@@ -42,14 +40,10 @@ func (s *SQLiteClient) Backup() {
 
 func (s *SQLiteClient) Lock() {
 	s.serialChan <- struct{}{}
-	fmt.Println("GOT DB LOCK")
-	fmt.Println(string(debug.Stack()))
 }
 
 func (s *SQLiteClient) Unlock() {
 	<-s.serialChan
-	fmt.Println("DB UNLOCKED")
-	fmt.Println(string(debug.Stack()))
 }
 
 func (s *SQLiteClient) Init() error {

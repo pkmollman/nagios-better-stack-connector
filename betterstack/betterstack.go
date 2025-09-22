@@ -50,7 +50,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 
 func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (*http.Response, error) {
 	request_success := false
-	wait_time_seconds := 10
+	wait_time_seconds := 20
 	initial_try := true
 	retries := 0
 	var res *http.Response
@@ -76,7 +76,7 @@ func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (
 			if retry_after != "" {
 				wait_time, perr := strconv.Atoi(retry_after)
 				if perr != nil {
-					wait_time_seconds = 10
+					wait_time_seconds = 20
 				} else {
 					wait_time_seconds = wait_time
 				}
