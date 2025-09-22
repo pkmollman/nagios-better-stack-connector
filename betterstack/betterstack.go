@@ -51,6 +51,7 @@ func (b *BetterStackClient) NewRequest(httpMethod, endpoint string, data io.Read
 func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (*http.Response, error) {
 	request_success := false
 	wait_time_seconds := 0
+	initial_try := true
 	retries := 0
 	var res *http.Response
 
@@ -58,7 +59,7 @@ func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (
 		if retries > MAX_RETRIES {
 			return nil, fmt.Errorf("Hit max retries...")
 		}
-		if wait_time_seconds > 0 {
+		if !initial_try {
 			retries++
 			fmt.Println(fmt.Sprintf("Got unexpected status code %d waiting for %d seconds.", res.StatusCode, wait_time_seconds))
 			time.Sleep(time.Duration(wait_time_seconds) * time.Second)
@@ -68,6 +69,7 @@ func (b *BetterStackClient) Do(req *http.Request, expected_status_codes []int) (
 		if err != nil {
 			return nil, err
 		}
+		initial_try = false
 
 		if !slices.Contains(expected_status_codes[:], res.StatusCode) {
 			retry_after := res.Header.Get("Retry-After")
