@@ -13,7 +13,9 @@ import (
 
 func (wh *webHandler) handleIncomingNagiosNotification(w http.ResponseWriter, r *http.Request) {
 	logRequest(r)
+	fmt.Println("Before trying to lock DB in nagios handler")
 	wh.dbClient.Lock()
+	fmt.Println("Got nagios handler DB lock")
 	defer wh.dbClient.Unlock()
 	var event models.EventItem
 
