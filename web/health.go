@@ -86,6 +86,7 @@ func (wh *webHandler) updateHealthStatus() {
 
 	// check database
 	wh.dbClient.Lock()
+	defer wh.dbClient.Unlock()
 	_, err := wh.dbClient.GetAllEventItems()
 	if err != nil {
 		connectorStatus.Database.NewFailure("Failed to get event items from database: " + err.Error())
@@ -112,8 +113,6 @@ func (wh *webHandler) updateHealthStatus() {
 	} else {
 		connectorStatus.Database.NewSuccess("Successfully deleted event item in database")
 	}
-
-	wh.dbClient.Unlock()
 
 	// check nagios
 	hosts, err := wh.nagiosClient.GetHosts()
